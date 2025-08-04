@@ -20,6 +20,6 @@ class MainDocumentConverter : public QObject, public DocumentFileConverter
         QString output_path;
 };
 
-void convert_document_file(QWidget *parent, QString input_extension, QString output_extension, MainDocumentConverter *converter);
+void convert_document_file(QWidget *parent, QString input_extension, QString output_extension, MainDocumentConverter *converter, bool alt_save_location);
 
 #endif // MAINDOCUMENTCONVERTER_H

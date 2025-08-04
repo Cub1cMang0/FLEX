@@ -73,7 +73,8 @@ void MainDocumentConverter::convert_document(const QString &input_path, const QS
     connect(pandoc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, [=](int exitCode, QProcess::ExitStatus status) {
                 if (status != QProcess::NormalExit || exitCode != 0) {
-                    emit conversionFinished(false, "File could not be converted.");
+                    if (output_path != "") {emit conversionFinished(false, "File could not be converted.");}
+                    else {emit conversionFinished(false, "No location selected");}
                 } else {
                     QFileInfo input_file_info(input_path);
                     QString result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() + " has been converted to " + input_file_info.completeBaseName() + '.' + output_extension.toLower();
@@ -84,19 +85,24 @@ void MainDocumentConverter::convert_document(const QString &input_path, const QS
     pandoc->start("pandoc", arguments);
 }
 
-void convert_document_file(QWidget *parent, QString input_extension, QString output_extension, MainDocumentConverter *converter)
+void convert_document_file(QWidget *parent, QString input_extension, QString output_extension, MainDocumentConverter *converter, bool alt_save_location)
 {
     bool is_json = false;
-    QString input_info = input_extension + " Files" + "(*." + input_extension.toLower() + ")";
+    QString input_info = input_extension + " Files " + "(*." + input_extension.toLower() + ")";
     QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
-    QDir output_dir("output");
-    if (!output_dir.exists())
-    {
-        output_dir.mkpath(".");
-    }
     QFileInfo input_file_info(file_path);
     QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
-    QString output_path = output_dir.filePath(output_name);
+    QString output_path;
+    if (alt_save_location)
+    {
+        QString output_info = output_extension + " Files " + "(*." + output_extension.toLower() + ")";
+        output_path = QFileDialog::getSaveFileName(NULL, "Save File", "", output_info);
+    }
+    else
+    {
+        QDir output_dir("output");
+        output_path = output_dir.filePath(output_name);
+    }
     if (input_extension == "JSON")
     {
         ifstream json_file((file_path).toStdString());

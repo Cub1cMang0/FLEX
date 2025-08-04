@@ -16,6 +16,6 @@ class MainVideoConverter : public QObject, public VideoFileConverter
         void update_av_progress(int percentage);
 };
 
-QString convert_video_file(QString input_extension, QString output_extension, QProgressBar *progress_bar);
+QString convert_video_file(QString input_extension, QString output_extension, QProgressBar *progress_bar, bool alt_save_location);
 
 #endif // MAINVIDEOCONVERTER_H

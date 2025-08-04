@@ -18,23 +18,39 @@ public:
     ~MainWindow();
 
 private slots:
+    void convert_user_image(bool alt_save_location);
+
+    void on_convert_button_image_clicked();
+
+    void on_convert_button_image_save_clicked();
+
     void on_input_type_image_currentTextChanged(const QString &arg1);
 
     void on_output_type_image_currentTextChanged(const QString &arg1);
 
-    void on_convert_button_image_clicked();
+    void convert_user_av(bool alt_save_location);
+
+    void on_convert_button_av_clicked();
+
+    void on_convert_button_av_save_clicked();
 
     void on_input_type_av_currentTextChanged(const QString &arg1);
 
     void on_output_type_av_currentTextChanged(const QString &arg1);
 
-    void on_convert_button_av_clicked();
+    void convert_user_document(bool alt_save_location);
+
+    void on_convert_button_doc_clicked();
+
+    void on_convert_button_doc_save_clicked();
 
     void on_input_type_doc_currentTextChanged(const QString &arg1);
 
     void on_output_type_doc_currentTextChanged(const QString &arg1);
 
-    void on_convert_button_doc_clicked();
+    void exit_program();
+
+    void change_save_folder();
 
 private:
     Ui::MainWindow *ui;
