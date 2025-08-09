@@ -85,7 +85,7 @@ void MainDocumentConverter::convert_document(const QString &input_path, const QS
     pandoc->start("pandoc", arguments);
 }
 
-void convert_document_file(QWidget *parent, QString input_extension, QString output_extension, MainDocumentConverter *converter, bool alt_save_location)
+void convert_document_file(QWidget *parent, QString input_extension, QString output_extension, MainDocumentConverter *converter, QString save_folder)
 {
     bool is_json = false;
     QString input_info = input_extension + " Files " + "(*." + input_extension.toLower() + ")";
@@ -93,14 +93,14 @@ void convert_document_file(QWidget *parent, QString input_extension, QString out
     QFileInfo input_file_info(file_path);
     QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
     QString output_path;
-    if (alt_save_location)
+    if (save_folder == "Alternate")
     {
         QString output_info = output_extension + " Files " + "(*." + output_extension.toLower() + ")";
         output_path = QFileDialog::getSaveFileName(NULL, "Save File", "", output_info);
     }
     else
     {
-        QDir output_dir("output");
+        QDir output_dir(save_folder);
         output_path = output_dir.filePath(output_name);
     }
     if (input_extension == "JSON")

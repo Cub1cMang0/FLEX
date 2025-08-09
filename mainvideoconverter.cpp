@@ -75,7 +75,7 @@ qint64 get_file_duration(const QString &file_path)
 }
 
 
-QString convert_video_file(QString input_extension, QString output_extension, QProgressBar *progress_bar, bool alt_save_location)
+QString convert_video_file(QString input_extension, QString output_extension, QProgressBar *progress_bar, QString save_folder)
 {
     int duration_ms;
     QString input_info = input_extension + " Files " + "(*." + input_extension.toLower() + ")";
@@ -83,14 +83,14 @@ QString convert_video_file(QString input_extension, QString output_extension, QP
     QFileInfo input_file_info(file_path);
     QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
     QString output_path;
-    if (alt_save_location)
+    if (save_folder == "Alternate")
     {
         QString output_info = output_extension + " Files " + "(*." + output_extension.toLower();
         output_path = QFileDialog::getSaveFileName(NULL, "Save File", "(*.", output_info);
     }
     else
     {
-        QDir output_dir("output");
+        QDir output_dir(save_folder);
         output_path = output_dir.filePath(output_name);
     }
     QString result_message;

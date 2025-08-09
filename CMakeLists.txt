@@ -33,6 +33,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         documentfileconverter.h
         maindocumentconverter.h maindocumentconverter.cpp
         json.hpp
+        changesavelocation.h changesavelocation.cpp changesavelocation.ui
+        archivefileconverter.h
+        mainarchiveconverter.h mainarchiveconverter.cpp
 
 
 
@@ -54,6 +57,14 @@ else()
         )
     endif()
 endif()
+
+set(LibArchive_ROOT "C:/Users/Gabriel/vcpkg/installed/x64-mingw-dynamic")
+set(LibArchive_INCLUDE_DIR "${LibArchive_ROOT}/include")
+set(LibArchive_LIBRARY "${LibArchive_ROOT}/lib/libarchive.dll.a")
+
+find_package(LibArchive REQUIRED)
+target_include_directories(file_convert PRIVATE ${LibArchive_INCLUDE_DIR})
+target_link_libraries(file_convert PRIVATE ${LibArchive_LIBRARY})
 
 target_link_libraries(file_convert PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 

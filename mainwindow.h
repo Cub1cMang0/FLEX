@@ -18,7 +18,7 @@ public:
     ~MainWindow();
 
 private slots:
-    void convert_user_image(bool alt_save_location);
+    void convert_user_image(QString save_folder);
 
     void on_convert_button_image_clicked();
 
@@ -28,7 +28,7 @@ private slots:
 
     void on_output_type_image_currentTextChanged(const QString &arg1);
 
-    void convert_user_av(bool alt_save_location);
+    void convert_user_av(QString save_folder);
 
     void on_convert_button_av_clicked();
 
@@ -38,7 +38,7 @@ private slots:
 
     void on_output_type_av_currentTextChanged(const QString &arg1);
 
-    void convert_user_document(bool alt_save_location);
+    void convert_user_document(QString save_folder);
 
     void on_convert_button_doc_clicked();
 
@@ -48,9 +48,23 @@ private slots:
 
     void on_output_type_doc_currentTextChanged(const QString &arg1);
 
+    void convert_user_archive(QString save_folder);
+
+    void on_convert_button_archive_clicked();
+
+    void on_convert_button_archive_save_clicked();
+
+    void on_input_type_archive_currentTextChanged(const QString &arg1);
+
+    void on_output_type_archive_currentTextChanged(const QString &arg1);
+
     void exit_program();
 
     void change_save_folder();
+
+    void check_save_location();
+
+    void setup_progress_bars();
 
 private:
     Ui::MainWindow *ui;
