@@ -24,7 +24,6 @@ bool set_output_format(struct archive* a, QString ext) {
 
 void MainArchiveConverter::convert_archive(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
 {
-    qDebug() << output_path;
     struct archive *input_file = archive_read_new();
     struct archive *output_file = archive_write_new();
     struct archive_entry *entry;

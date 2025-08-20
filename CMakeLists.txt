@@ -36,6 +36,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         changesavelocation.h changesavelocation.cpp changesavelocation.ui
         archivefileconverter.h
         mainarchiveconverter.h mainarchiveconverter.cpp
+        spreadfileconverter.h
+        mainspreadconverter.h mainspreadconverter.cpp
+        draganddrop.h
+        imagepreferences.h imagepreferences.cpp imagepreferences.ui
 
 
 
@@ -65,6 +69,9 @@ set(LibArchive_LIBRARY "${LibArchive_ROOT}/lib/libarchive.dll.a")
 find_package(LibArchive REQUIRED)
 target_include_directories(file_convert PRIVATE ${LibArchive_INCLUDE_DIR})
 target_link_libraries(file_convert PRIVATE ${LibArchive_LIBRARY})
+
+target_include_directories(file_convert PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(file_convert PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 

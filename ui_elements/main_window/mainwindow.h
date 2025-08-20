@@ -18,6 +18,8 @@ public:
     ~MainWindow();
 
 private slots:
+    void change_image_preferences();
+
     void convert_user_image(QString save_folder);
 
     void on_convert_button_image_clicked();
@@ -58,13 +60,27 @@ private slots:
 
     void on_output_type_archive_currentTextChanged(const QString &arg1);
 
+    void convert_user_spreadsheet(QString save_folder);
+
+    void on_convert_button_spread_clicked();
+
+    void on_convert_button_spread_save_clicked();
+
+    void on_input_type_spread_currentTextChanged(const QString &arg1);
+
+    void on_output_type_spread_currentTextChanged(const QString &arg1);
+
     void exit_program();
+
+    void open_save_location();
 
     void change_save_folder();
 
     void check_save_location();
 
     void setup_progress_bars();
+
+    void on_drag_n_drop_area_textChanged();
 
 private:
     Ui::MainWindow *ui;

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include <QDebug>
+#include <QDir>
 #include <QFileDialog>
 #include <QString>
 #include <QAction>
@@ -8,13 +9,17 @@
 #include <QVBoxLayout>
 #include <QInputDialog>
 #include <QTimer>
+#include <QUrl>
+#include <QDesktopServices>
 #include <filesystem>
 #include <fstream>
 #include "mainimageconverter.h"
 #include "mainvideoconverter.h"
 #include "maindocumentconverter.h"
 #include "mainarchiveconverter.h"
+#include "mainspreadconverter.h"
 #include "changesavelocation.h"
+#include "imagepreferences.h"
 #include "json.hpp"
 #include <archive.h>
 #include <archive_entry.h>
@@ -29,7 +34,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     ui->result_box->setReadOnly(true);
     connect(ui->actionExit, &QAction::triggered, this, &MainWindow::exit_program);
+    connect(ui->actionOpen_Save_Folder, &QAction::triggered, this, &MainWindow::open_save_location);
     connect(ui->actionChange_Save_Folder, &QAction::triggered, this, &MainWindow::change_save_folder);
+    connect(ui->actionImage_Preferences, &QAction::triggered, this, &MainWindow::change_image_preferences);
     check_save_location();
     setup_progress_bars();
 }
@@ -37,6 +44,20 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::change_save_folder()
+{
+    ChangeSaveLocation change_save_location;
+    change_save_location.setModal(true);
+    change_save_location.exec();
+}
+
+void MainWindow::change_image_preferences()
+{
+    ImagePreferences image_preferences;
+    image_preferences.setModal(true);
+    image_preferences.exec();
 }
 
 void MainWindow::setup_progress_bars()
@@ -47,6 +68,7 @@ void MainWindow::setup_progress_bars()
     ui->av_progress->setValue(0);
     ui->doc_progress->setValue(0);
     ui->archives_progress->setValue(0);
+    ui->spread_progress->setValue(0);
 }
 
 void MainWindow::check_save_location()
@@ -87,11 +109,9 @@ void MainWindow::exit_program()
     QApplication::quit();
 }
 
-void MainWindow::change_save_folder()
+void MainWindow::open_save_location()
 {
-    ChangeSaveLocation change_save_location;
-    change_save_location.setModal(true);
-    change_save_location.exec();
+    QDesktopServices::openUrl(QUrl::fromLocalFile(load_save_location()));
 }
 
 void MainWindow::convert_user_image(QString save_folder)
@@ -213,23 +233,24 @@ void MainWindow::convert_user_document(QString save_folder)
     ui->doc_progress->setMinimum(0);
     ui->doc_progress->setMaximum(0);
     MainDocumentConverter *converter = new MainDocumentConverter(this);
-    QObject::connect(converter, &MainDocumentConverter::conversionFinished,
-        [this](bool success, const QString &message) mutable {
-            ui->result_box->setReadOnly(false);
-            ui->result_box->setText(message);
-            ui->result_box->setReadOnly(true);
-            ui->doc_progress->setRange(0, 1);
-            if (success)
-            {
-                ui->doc_progress->setValue(1);
-            }
-            else
-            {
-                ui->doc_progress->setValue(0);
-            }
-        });
+    QObject::connect(converter, &MainDocumentConverter::conversionFinished, [this](bool success, const QString &message) mutable
+    {
+        ui->result_box->setReadOnly(false);
+        ui->result_box->setText(message);
+        ui->result_box->setReadOnly(true);
+        ui->doc_progress->setRange(0, 1);
+        if (success)
+        {
+            ui->doc_progress->setValue(1);
+        }
+        else
+        {
+            ui->doc_progress->setValue(0);
+        }
+    });
     convert_document_file(this, ui->input_type_doc->currentText(), ui->output_type_doc->currentText(), converter, save_folder);
-    QTimer::singleShot(5000, this, [this]() {
+    QTimer::singleShot(5000, this, [this]()
+    {
         ui->result_box->setReadOnly(false);
         ui->result_box->clear();
         ui->result_box->setReadOnly(true);
@@ -333,7 +354,6 @@ void MainWindow::on_input_type_archive_currentTextChanged(const QString &arg1)
     }
 }
 
-
 void MainWindow::on_output_type_archive_currentTextChanged(const QString &arg1)
 {
     QString opposite_selection = ui->input_type_archive->currentText();
@@ -347,5 +367,79 @@ void MainWindow::on_output_type_archive_currentTextChanged(const QString &arg1)
         ui->convert_button_archive->setEnabled(true);
         ui->convert_button_archive_save->setEnabled(true);
     }
+}
+
+void MainWindow::convert_user_spreadsheet(QString save_folder)
+{
+    ui->spread_progress->setMinimum(0);
+    ui->spread_progress->setMaximum(0);
+    MainSpreadConverter *converter = new MainSpreadConverter(this);
+    QObject::connect(converter, &MainSpreadConverter::conversion_finished, [this](bool success, const QString &message) mutable
+    {
+        ui->result_box->setReadOnly(false);
+        ui->result_box->setText(message);
+        ui->result_box->setReadOnly(true);
+        ui->spread_progress->setRange(0, 1);
+        if (success)
+        {
+            ui->spread_progress->setValue(1);
+        }
+        else
+        {
+            ui->spread_progress->setValue(0);
+        }
+    });
+    convert_spread_file(this, ui->input_type_spread->currentText(), ui->output_type_spread->currentText(), converter, save_folder);
+    QTimer::singleShot(5000, this, [this]()
+    {
+        ui->result_box->setReadOnly(false);
+        ui->result_box->clear();
+        ui->result_box->setReadOnly(true);
+    });
+}
+
+void MainWindow::on_convert_button_spread_clicked()
+{
+    convert_user_spreadsheet(load_save_location());
+}
+
+void MainWindow::on_convert_button_spread_save_clicked()
+{
+    convert_user_spreadsheet("Alternate");
+}
+
+void MainWindow::on_input_type_spread_currentTextChanged(const QString &arg1)
+{
+    QString opposite_selection = ui->output_type_spread->currentText();
+    if (arg1 == opposite_selection)
+    {
+        ui->convert_button_spread->setEnabled(false);
+        ui->convert_button_spread_save->setEnabled(false);
+    }
+    else
+    {
+        ui->convert_button_spread->setEnabled(true);
+        ui->convert_button_spread_save->setEnabled(true);
+    }
+}
+
+void MainWindow::on_output_type_spread_currentTextChanged(const QString &arg1)
+{
+    QString opposite_selection = ui->input_type_spread->currentText();
+    if (arg1 == opposite_selection)
+    {
+        ui->convert_button_spread->setEnabled(false);
+        ui->convert_button_spread_save->setEnabled(false);
+    }
+    else
+    {
+        ui->convert_button_spread->setEnabled(true);
+        ui->convert_button_spread_save->setEnabled(true);
+    }
+}
+
+void MainWindow::on_drag_n_drop_area_textChanged()
+{
+    ui->drag_n_drop_text->setText("");
 }
 

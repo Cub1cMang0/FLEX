@@ -65,23 +65,27 @@ void MainDocumentConverter::convert_document(const QString &input_path, const QS
     QStringList arguments;
     arguments << input_path << "-o" << output_path;
     pandoc = new QProcess(this);
-    connect(pandoc, &QProcess::errorOccurred, this, [=](QProcess::ProcessError error) {
+    connect(pandoc, &QProcess::errorOccurred, this, [=](QProcess::ProcessError error)
+    {
         Q_UNUSED(error);
         emit conversionFinished(false, "Failed to load document converter.");
         pandoc->deleteLater();
     });
-    connect(pandoc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this, [=](int exitCode, QProcess::ExitStatus status) {
-                if (status != QProcess::NormalExit || exitCode != 0) {
-                    if (output_path != "") {emit conversionFinished(false, "File could not be converted.");}
-                    else {emit conversionFinished(false, "No location selected");}
-                } else {
-                    QFileInfo input_file_info(input_path);
-                    QString result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() + " has been converted to " + input_file_info.completeBaseName() + '.' + output_extension.toLower();
-                    emit conversionFinished(true, result);
-                }
-                pandoc->deleteLater();
-            });
+    connect(pandoc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, [=](int exitCode, QProcess::ExitStatus status)
+    {
+        if (status != QProcess::NormalExit || exitCode != 0)
+        {
+            if (output_path != "") {emit conversionFinished(false, "File could not be converted.");}
+            else {emit conversionFinished(false, "No location selected");}
+        }
+        else
+        {
+            QFileInfo input_file_info(input_path);
+            QString result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() + " has been converted to " + input_file_info.completeBaseName() + '.' + output_extension.toLower();
+            emit conversionFinished(true, result);
+        }
+        pandoc->deleteLater();
+    });
     pandoc->start("pandoc", arguments);
 }
 
@@ -115,15 +119,17 @@ void convert_document_file(QWidget *parent, QString input_extension, QString out
         file_path = markdown_file;
         is_json = true;
     }
-    QObject::connect(converter, &MainDocumentConverter::conversionFinished,
-         parent, [=](bool success, const QString &message) mutable {
-             if (success) {
-                 if (is_json) {
-                     QFile md_file(file_path);
-                     md_file.remove();
-                 }
-             }
-             converter->deleteLater();
-         });
+    QObject::connect(converter, &MainDocumentConverter::conversionFinished, parent, [=](bool success, const QString &message) mutable
+    {
+        if (success)
+        {
+            if (is_json)
+            {
+                QFile md_file(file_path);
+                md_file.remove();
+            }
+        }
+        converter->deleteLater();
+    });
     converter->convert_document(file_path, output_path, input_extension, output_extension);
 }
