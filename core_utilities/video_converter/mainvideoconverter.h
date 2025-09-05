@@ -11,7 +11,7 @@ class MainVideoConverter : public QObject, public VideoFileConverter
     Q_OBJECT
     public:
         explicit MainVideoConverter(QObject *parent = nullptr);
-        bool convert_video(const QString &input_path, const QString &output_path, QString &error_message, qint64 duration_ms) override;
+        bool convert_video(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension, QString &error_message, qint64 duration_ms);
     signals:
         void update_av_progress(int percentage);
 };

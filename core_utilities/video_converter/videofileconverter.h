@@ -6,7 +6,7 @@ class VideoFileConverter
 {
     public:
         virtual ~VideoFileConverter() {}
-        virtual bool convert_video(const QString &input_path, const QString &output_path, QString &error_message, qint64 duration_ms) = 0;
+        bool convert_video(const QString &input_path, const QString &output_path, QString &error_message, qint64 duration_ms);
 };
 
 #endif // VIDEOFILECONVERTER_H

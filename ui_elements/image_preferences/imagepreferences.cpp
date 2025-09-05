@@ -13,6 +13,10 @@ ImagePreferences::ImagePreferences(QWidget *parent)
     QIntValidator *validator = new QIntValidator(0, 100, this);
     ui->quality_range->setValidator(validator);
     load_image_preferences();
+    ui->quality_cb->setToolTip("Applies to: PNG, JPG, JPEG, JIFI");
+    ui->remove_alpha_cb->setToolTip("Applies to: PNG, ICO, CUR, XPM");
+    ui->gray_scale_cb->setToolTip("Applies to: PNG, JPG, JPEG, ICO, JIFI, PGM, BMP, CUR, XPM");
+    ui->bit_depth_cb->setToolTip("Applies to: PNG, ICO, BMP, CUR");
 }
 
 ImagePreferences::~ImagePreferences()
@@ -128,7 +132,20 @@ void ImagePreferences::on_save_image_preferences_clicked()
     QFileInfo file_info(source_location);
     QString cpp_directory = file_info.absolutePath();
     QString json_path = cpp_directory + "/conversion_preferences.json";
+    json preference_data;
     json image_data;
+    ifstream input_file(json_path.toStdString());
+    if (input_file.is_open())
+    {
+        try
+        {
+            input_file >> preference_data;
+        }
+        catch (...)
+        {
+            json preference_data;
+        }
+    }
     if (ui->aspect_ratio->currentText() == "Keep Aspect Ratio") {image_data["aspect_ratio"] = {false, "None"};}
     else {image_data["aspect_ratio"] = {true, ui->aspect_ratio->currentText().toStdString()};}
     if (ui->quality_cb->checkState() == Qt::Unchecked) {image_data["quality"] = {false, "None"};}
@@ -139,15 +156,15 @@ void ImagePreferences::on_save_image_preferences_clicked()
     else {image_data["alpha"] = {true};}
     if (ui->bit_depth_cb->checkState() == Qt::Unchecked) {image_data["bitdepth"] = {false, "None"};}
     else {image_data["bitdepth"] = {true, ui->bit_depth->currentText().toStdString()};}
-    json preference_data;
     preference_data["image"] = image_data;
-    ofstream file(json_path.toStdString());
-    if (file.is_open())
+    ofstream output_file(json_path.toStdString());
+    if (output_file.is_open())
     {
-        file << preference_data.dump(4);
-        file.close();
+        output_file << preference_data.dump(4);
+        output_file.close();
         ui->save_image_preferences->setEnabled(false);
         ui->cancel_image_preferences->setEnabled(false);
+        fetch_initial_cb_states(initial_aspect_ratio, initial_quality, initial_grayscale, initial_alpha, initial_bit_depth);
     }
 }
 

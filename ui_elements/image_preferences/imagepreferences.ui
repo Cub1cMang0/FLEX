@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>571</width>
-    <height>402</height>
+    <width>623</width>
+    <height>592</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,7 +16,7 @@
   <widget class="QLabel" name="aspect_ratio_text">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>150</x>
      <y>20</y>
      <width>151</width>
      <height>31</height>
@@ -34,7 +34,7 @@
   <widget class="QComboBox" name="aspect_ratio">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>310</x>
      <y>20</y>
      <width>131</width>
      <height>31</height>
@@ -79,7 +79,7 @@
   <widget class="QCheckBox" name="gray_scale_cb">
    <property name="geometry">
     <rect>
-     <x>120</x>
+     <x>140</x>
      <y>140</y>
      <width>301</width>
      <height>41</height>
@@ -131,7 +131,7 @@ QCheckBox::indicator:checked {
   <widget class="QCheckBox" name="remove_alpha_cb">
    <property name="geometry">
     <rect>
-     <x>120</x>
+     <x>140</x>
      <y>200</y>
      <width>301</width>
      <height>41</height>
@@ -165,7 +165,7 @@ QCheckBox::indicator:checked {
   <widget class="QCheckBox" name="quality_cb">
    <property name="geometry">
     <rect>
-     <x>120</x>
+     <x>140</x>
      <y>80</y>
      <width>301</width>
      <height>41</height>
@@ -199,8 +199,8 @@ QCheckBox::indicator:checked {
   <widget class="QLineEdit" name="quality_range">
    <property name="geometry">
     <rect>
-     <x>340</x>
-     <y>80</y>
+     <x>360</x>
+     <y>90</y>
      <width>51</width>
      <height>24</height>
     </rect>
@@ -212,7 +212,7 @@ QCheckBox::indicator:checked {
   <widget class="QCheckBox" name="bit_depth_cb">
    <property name="geometry">
     <rect>
-     <x>120</x>
+     <x>140</x>
      <y>260</y>
      <width>301</width>
      <height>41</height>
@@ -237,17 +237,17 @@ QCheckBox::indicator:checked {
 
 QCheckBox::indicator:checked {
 	background: #32a6ff;
-}bom</string>
+}</string>
    </property>
    <property name="text">
-    <string>Bit Depth                         </string>
+    <string>Bit Depth                        </string>
    </property>
   </widget>
   <widget class="QComboBox" name="bit_depth">
    <property name="geometry">
     <rect>
-     <x>340</x>
-     <y>260</y>
+     <x>360</x>
+     <y>270</y>
      <width>51</width>
      <height>24</height>
     </rect>
@@ -281,8 +281,8 @@ QCheckBox::indicator:checked {
   <widget class="QPushButton" name="save_image_preferences">
    <property name="geometry">
     <rect>
-     <x>140</x>
-     <y>340</y>
+     <x>160</x>
+     <y>410</y>
      <width>101</width>
      <height>24</height>
     </rect>
@@ -294,14 +294,48 @@ QCheckBox::indicator:checked {
   <widget class="QPushButton" name="cancel_image_preferences">
    <property name="geometry">
     <rect>
-     <x>320</x>
-     <y>340</y>
+     <x>340</x>
+     <y>410</y>
      <width>101</width>
      <height>24</height>
     </rect>
    </property>
    <property name="text">
     <string>Cancel Changes</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="bulk_image_conversion">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>320</y>
+     <width>301</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::LayoutDirection::RightToLeft</enum>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+	border: 1px solid grey;
+	border-radius: 4px;
+	color: white;
+}
+
+QCheckBox::indicator:checked {
+	background: #32a6ff;
+}</string>
+   </property>
+   <property name="text">
+    <string>Convert Images In Bulk   </string>
    </property>
   </widget>
  </widget>

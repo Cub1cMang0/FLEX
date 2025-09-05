@@ -40,6 +40,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         mainspreadconverter.h mainspreadconverter.cpp
         draganddrop.h
         imagepreferences.h imagepreferences.cpp imagepreferences.ui
+        videoaudiopreferences.h videoaudiopreferences.cpp videoaudiopreferences.ui
 
 
 

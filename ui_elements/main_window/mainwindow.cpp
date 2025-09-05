@@ -20,6 +20,7 @@
 #include "mainspreadconverter.h"
 #include "changesavelocation.h"
 #include "imagepreferences.h"
+#include "videoaudiopreferences.h"
 #include "json.hpp"
 #include <archive.h>
 #include <archive_entry.h>
@@ -37,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionOpen_Save_Folder, &QAction::triggered, this, &MainWindow::open_save_location);
     connect(ui->actionChange_Save_Folder, &QAction::triggered, this, &MainWindow::change_save_folder);
     connect(ui->actionImage_Preferences, &QAction::triggered, this, &MainWindow::change_image_preferences);
+    connect(ui->actionVideo_Audio_Preferences, &QAction::triggered, this, &MainWindow::change_videoaudio_preferences);
     check_save_location();
     setup_progress_bars();
 }
@@ -58,6 +60,13 @@ void MainWindow::change_image_preferences()
     ImagePreferences image_preferences;
     image_preferences.setModal(true);
     image_preferences.exec();
+}
+
+void MainWindow::change_videoaudio_preferences()
+{
+    VideoAudioPreferences videoaudio_preferences;
+    videoaudio_preferences.setModal(true);
+    videoaudio_preferences.exec();
 }
 
 void MainWindow::setup_progress_bars()

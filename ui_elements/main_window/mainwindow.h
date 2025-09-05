@@ -20,6 +20,8 @@ public:
 private slots:
     void change_image_preferences();
 
+    void change_videoaudio_preferences();
+
     void convert_user_image(QString save_folder);
 
     void on_convert_button_image_clicked();

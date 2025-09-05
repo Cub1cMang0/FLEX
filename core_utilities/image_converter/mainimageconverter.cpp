@@ -92,6 +92,10 @@ QString convert_image_file(QString input_extension, QString output_extension, QS
 {
     QString input_info = input_extension + " Files " + "(*." + input_extension.toLower() + ")";
     QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
+    if (file_path.isEmpty())
+    {
+        return "No image file selected";
+    }
     QFileInfo input_file_info(file_path);
     QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
     QString output_path;

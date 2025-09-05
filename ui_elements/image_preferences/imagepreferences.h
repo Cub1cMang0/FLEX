@@ -42,18 +42,18 @@ struct ImageFormatCapabilities
 
 inline const QMap<QString, ImageFormatCapabilities> format_capabilities =
     {
-        {"png",  {true, true, true, false}},
+        {"png",  {true, true, true, true}},
         {"jpg",  {true, false, true, false}},
         {"jpeg", {true, false, true, false}},
-        {"ico",  {false, true, true, false}},
+        {"ico",  {false, true, true, true}},
         {"jfif", {true, false, true, false}},
-        {"pbm",  {false, false, true, true}},
-        {"pgm",  {false, false, true, true}},
-        {"ppm",  {false, false, true, true}},
-        {"bmp",  {false, false, true, false}},
-        {"cur",  {false, true, true, false}},
-        {"xbm",  {false, false, true, true}},
-        {"xpm",  {false, true, true, true}}
+        {"pbm",  {false, false, false, false}},
+        {"pgm",  {false, false, true, false}},
+        {"ppm",  {false, false, false, false}},
+        {"bmp",  {false, false, true, true}},
+        {"cur",  {false, true, true, true}},
+        {"xbm",  {false, false, false, false}},
+        {"xpm",  {false, true, true, false}}
 };
 
 #endif // IMAGEPREFERENCES_H
