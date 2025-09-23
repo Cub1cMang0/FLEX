@@ -10,7 +10,7 @@ class MainDocumentConverter : public QObject, public DocumentFileConverter
     Q_OBJECT
     public:
         explicit MainDocumentConverter(QObject *parent = nullptr);
-        void convert_document(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension);
+        void convert_document(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension, const DocumentFormatCapabilities &settings) override;
     signals:
         void conversionFinished(bool success, const QString &message);
     private:

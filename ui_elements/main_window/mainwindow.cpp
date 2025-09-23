@@ -21,6 +21,7 @@
 #include "changesavelocation.h"
 #include "imagepreferences.h"
 #include "videoaudiopreferences.h"
+#include "documentpreferences.h"
 #include "json.hpp"
 #include <archive.h>
 #include <archive_entry.h>
@@ -39,6 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionChange_Save_Folder, &QAction::triggered, this, &MainWindow::change_save_folder);
     connect(ui->actionImage_Preferences, &QAction::triggered, this, &MainWindow::change_image_preferences);
     connect(ui->actionVideo_Audio_Preferences, &QAction::triggered, this, &MainWindow::change_videoaudio_preferences);
+    connect(ui->actionDocument_Preferences, &QAction::triggered, this, &MainWindow::change_document_preferences);
     check_save_location();
     setup_progress_bars();
 }
@@ -67,6 +69,13 @@ void MainWindow::change_videoaudio_preferences()
     VideoAudioPreferences videoaudio_preferences;
     videoaudio_preferences.setModal(true);
     videoaudio_preferences.exec();
+}
+
+void MainWindow::change_document_preferences()
+{
+    DocumentPreferences document_preferences;
+    document_preferences.setModal(true);
+    document_preferences.exec();
 }
 
 void MainWindow::setup_progress_bars()
@@ -127,9 +136,13 @@ void MainWindow::convert_user_image(QString save_folder)
 {
     ui->image_progress->setValue(0);
     QString result_message = convert_image_file(ui->input_type_image->currentText(), ui->output_type_image->currentText(), save_folder);
-    if (result_message != "Failed to load image." && result_message != "Failed to save image." && result_message != "No location selected")
+    if (result_message.left(1) == "S")
     {
         ui->image_progress->setValue(100);
+    }
+    else
+    {
+        ui->image_progress->setValue(0);
     }
     ui->result_box->setReadOnly(false);
     ui->result_box->setText(result_message);

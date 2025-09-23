@@ -115,7 +115,7 @@ QString convert_image_file(QString input_extension, QString output_extension, QS
     }
     QString error_message;
     MainImageConverter converter;
-    const auto &capabilities = format_capabilities[output_extension.toLower()];
+    const auto &capabilities = image_capabilities[output_extension.toLower()];
     if (!converter.convert_image(file_path, output_path, capabilities, error_message))
     {
         return error_message;

@@ -14,8 +14,6 @@ MainVideoConverter::MainVideoConverter(QObject *parent)
 
 QSet<QString> video_formats = {"MP4", "MOV", "AVI", "WMV", "MKV", "M4V"};
 
-
-
 QString set_resolution(QString resolution)
 {
     QString res = "";
@@ -157,7 +155,6 @@ bool MainVideoConverter::convert_video(const QString &input_path, const QString 
     if (exit_code != 0)
     {
         QByteArray error = ffmpegProcess.readAllStandardError();
-        qDebug() << error;
         emit update_av_progress(qBound(0, 0, 100));
         error_message = "File could not be converted";
         return false;

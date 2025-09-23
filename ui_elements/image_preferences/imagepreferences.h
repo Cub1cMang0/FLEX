@@ -40,7 +40,7 @@ struct ImageFormatCapabilities
     bool bit_depth_support = false;
 };
 
-inline const QMap<QString, ImageFormatCapabilities> format_capabilities =
+inline const QMap<QString, ImageFormatCapabilities> image_capabilities =
     {
         {"png",  {true, true, true, true}},
         {"jpg",  {true, false, true, false}},
