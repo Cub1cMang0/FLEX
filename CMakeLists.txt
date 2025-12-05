@@ -42,6 +42,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         imagepreferences.h imagepreferences.cpp imagepreferences.ui
         videoaudiopreferences.h videoaudiopreferences.cpp videoaudiopreferences.ui
         documentpreferences.h documentpreferences.cpp documentpreferences.ui
+        spreadsheetpreferences.h spreadsheetpreferences.cpp spreadsheetpreferences.ui
 
 
 

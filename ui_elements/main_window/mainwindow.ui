@@ -34,7 +34,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="Images">
      <attribute name="title">
@@ -777,11 +777,6 @@
       </item>
       <item>
        <property name="text">
-        <string>XLS</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
         <string>XML</string>
        </property>
       </item>
@@ -793,21 +788,6 @@
       <item>
        <property name="text">
         <string>ODS</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>DIF</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>DBF</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>SLK</string>
        </property>
       </item>
       <item>
@@ -837,11 +817,6 @@
       </item>
       <item>
        <property name="text">
-        <string>XLS</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
         <string>XML</string>
        </property>
       </item>
@@ -853,21 +828,6 @@
       <item>
        <property name="text">
         <string>ODS</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>DIF</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>DBF</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>SLK</string>
        </property>
       </item>
       <item>
