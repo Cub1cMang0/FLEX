@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>623</width>
-    <height>435</height>
+    <width>669</width>
+    <height>486</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Document Preferences</string>
   </property>
-  <widget class="QLabel" name="preserve_metadata_label">
+  <widget class="QLabel" name="rm_metadata_label">
    <property name="geometry">
     <rect>
-     <x>80</x>
+     <x>100</x>
      <y>40</y>
-     <width>211</width>
-     <height>31</height>
+     <width>201</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="font">
@@ -28,16 +28,16 @@
     </font>
    </property>
    <property name="text">
-    <string>Remove Metadata: </string>
+    <string>Remove Metadata:</string>
    </property>
   </widget>
   <widget class="QLabel" name="line_breaks_label">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>160</y>
+     <x>100</x>
+     <y>190</y>
      <width>131</width>
-     <height>31</height>
+     <height>41</height>
     </rect>
    </property>
    <property name="font">
@@ -46,16 +46,16 @@
     </font>
    </property>
    <property name="text">
-    <string>Line Breaks: </string>
+    <string>Line Breaks:</string>
    </property>
   </widget>
   <widget class="QLabel" name="standalone_label">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>200</y>
-     <width>251</width>
-     <height>31</height>
+     <x>100</x>
+     <y>240</y>
+     <width>241</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="font">
@@ -64,16 +64,16 @@
     </font>
    </property>
    <property name="text">
-    <string>Standalone Document: </string>
+    <string>Standalone Document:</string>
    </property>
   </widget>
   <widget class="QLabel" name="preserve_formatting_label">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>80</y>
+     <x>100</x>
+     <y>90</y>
      <width>231</width>
-     <height>31</height>
+     <height>41</height>
     </rect>
    </property>
    <property name="font">
@@ -88,10 +88,10 @@
   <widget class="QLabel" name="preserve_media_label">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>120</y>
+     <x>100</x>
+     <y>140</y>
      <width>171</width>
-     <height>31</height>
+     <height>41</height>
     </rect>
    </property>
    <property name="font">
@@ -100,13 +100,13 @@
     </font>
    </property>
    <property name="text">
-    <string>Preserve Media: </string>
+    <string>Preserve Media:</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="preserve_metadata_cb">
+  <widget class="QCheckBox" name="rm_metadata_cb">
    <property name="geometry">
     <rect>
-     <x>520</x>
+     <x>540</x>
      <y>50</y>
      <width>21</width>
      <height>21</height>
@@ -132,8 +132,8 @@ QCheckBox::indicator:checked {
   <widget class="QCheckBox" name="preserve_formatting_cb">
    <property name="geometry">
     <rect>
-     <x>520</x>
-     <y>90</y>
+     <x>540</x>
+     <y>100</y>
      <width>21</width>
      <height>21</height>
     </rect>
@@ -158,8 +158,8 @@ QCheckBox::indicator:checked {
   <widget class="QCheckBox" name="preserve_media_cb">
    <property name="geometry">
     <rect>
-     <x>520</x>
-     <y>130</y>
+     <x>540</x>
+     <y>150</y>
      <width>21</width>
      <height>21</height>
     </rect>
@@ -184,8 +184,8 @@ QCheckBox::indicator:checked {
   <widget class="QCheckBox" name="line_breaks_cb">
    <property name="geometry">
     <rect>
-     <x>520</x>
-     <y>170</y>
+     <x>540</x>
+     <y>200</y>
      <width>21</width>
      <height>21</height>
     </rect>
@@ -210,8 +210,8 @@ QCheckBox::indicator:checked {
   <widget class="QCheckBox" name="standalone_cb">
    <property name="geometry">
     <rect>
-     <x>520</x>
-     <y>210</y>
+     <x>540</x>
+     <y>250</y>
      <width>21</width>
      <height>21</height>
     </rect>
@@ -238,55 +238,11 @@ QCheckBox::indicator:checked {
     <string>CheckBox</string>
    </property>
   </widget>
-  <widget class="QLabel" name="doc_bulk_label">
-   <property name="geometry">
-    <rect>
-     <x>80</x>
-     <y>240</y>
-     <width>301</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Convert Documents in Bulk: </string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="checkBox">
-   <property name="geometry">
-    <rect>
-     <x>520</x>
-     <y>250</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
-	border: 1px solid grey;
-	border-radius: 4px;
-	color: white;
-}
-
-QCheckBox::indicator:checked {
-	background: #32a6ff;
-}</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
   <widget class="QPushButton" name="save_preferences">
    <property name="geometry">
     <rect>
-     <x>130</x>
-     <y>320</y>
+     <x>150</x>
+     <y>340</y>
      <width>101</width>
      <height>24</height>
     </rect>
@@ -298,8 +254,8 @@ QCheckBox::indicator:checked {
   <widget class="QPushButton" name="cancel_preferences">
    <property name="geometry">
     <rect>
-     <x>380</x>
-     <y>320</y>
+     <x>400</x>
+     <y>340</y>
      <width>111</width>
      <height>24</height>
     </rect>

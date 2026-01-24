@@ -17,8 +17,7 @@ using json = nlohmann::json;
 using namespace std;
 
 MainDocumentConverter::MainDocumentConverter(QObject *parent)
-    : QObject(parent), pandoc(nullptr)
-{}
+    : DocumentFileConverter(), QObject(parent) {}
 
 string json_markdown_wrap(const json &j)
 {
@@ -60,25 +59,29 @@ bool format_json(const QString &input_path, const QString &output_path)
     return true;
 }
 
-void MainDocumentConverter::convert_document(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension, const DocumentFormatCapabilities &settings)
+void MainDocumentConverter::convert_document(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
 {
-    this->output_path = output_path;
+    const auto &settings = document_capabilities[output_extension.toLower()];
     QStringList arguments;
     arguments << input_path << "-o" << output_path;
     QString temp_ref_path;
     pandoc = new QProcess(this);
+    pandoc->setProgram("pandoc");
     QString source_location = QString(__FILE__);
     QFileInfo file_info(source_location);
     QString cpp_directory = file_info.absolutePath();
     QString json_path = cpp_directory + "/conversion_preferences.json";
     ifstream save_json(json_path.toStdString());
+    json load_data;
     if (save_json.is_open())
     {
-        json load_data;
         save_json >> load_data;
         save_json.close();
+    }
+    if (load_data.contains("document"))
+    {
         auto document_preferences = load_data["document"];
-        int rem_metadata = document_preferences["pres_metadata"];
+        int rem_metadata = document_preferences["rm_metadata"];
         int pres_formatting = document_preferences["pres_formatting"];
         int pres_media = document_preferences["pres_media"];
         int line_break = document_preferences["line_break"];
@@ -98,7 +101,7 @@ void MainDocumentConverter::convert_document(const QString &input_path, const QS
             }
             temp_ref_file.close();
             QStringList ref_doc = {"DOCX", "ODT", "PPTX"};
-            QStringList template_doc = {"PDF", "TEX", "HTML"};
+            QStringList template_doc = {"TEX", "HTML"};
             if (ref_doc.contains(output_extension))
             {
                 QProcess ref_proc;
@@ -130,49 +133,40 @@ void MainDocumentConverter::convert_document(const QString &input_path, const QS
     connect(pandoc, &QProcess::errorOccurred, this, [=](QProcess::ProcessError error)
     {
         Q_UNUSED(error);
-        emit conversionFinished(false, "Failed to load document converter.");
-        pandoc->deleteLater();
+        emit update_doc_progress(0);
     });
     connect(pandoc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, [=](int exitCode, QProcess::ExitStatus status)
     {
         if (!temp_ref_path.isEmpty()) {
             QFile::remove(temp_ref_path);
         }
-        else if (status != QProcess::NormalExit || exitCode != 0)
+        if (status != QProcess::NormalExit || exitCode != 0)
         {
-            if (input_path != "") {emit conversionFinished(false, "File could not be converted.");}
-            else {emit conversionFinished(false, "No location selected");}
+            if (input_path != "") {emit update_doc_progress(0);}
+            else {emit update_doc_progress(0);}
         }
         else
         {
-            QFileInfo input_file_info(input_path);
-            QString result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() + " has been converted to " + input_file_info.completeBaseName() + '.' + output_extension.toLower();
-            emit conversionFinished(true, result);
+            emit {emit update_doc_progress(100);}
         }
-        pandoc->deleteLater();
     });
-    pandoc->start("pandoc", arguments);
+    pandoc->setArguments(arguments);
+    pandoc->start();
+
 }
 
-void convert_document_file(QWidget *parent, QString input_extension, QString output_extension, MainDocumentConverter *converter, QString save_folder)
+void MainDocumentConverter::convert_document_file(QString file_path, QString input_extension, QString output_extension, QString save_folder)
 {
+    if (file_path.isEmpty())
+    {
+        emit update_result_message("No document file selected", false);
+        return;
+    }
     bool is_json = false;
-    QString input_info = input_extension + " Files " + "(*." + input_extension.toLower() + ")";
-    QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
     QFileInfo input_file_info(file_path);
     QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
-    QString output_path;
-    const auto &capabilities = document_capabilities[output_extension.toLower()];
-    if (save_folder == "Alternate")
-    {
-        QString output_info = output_extension + " Files " + "(*." + output_extension.toLower() + ")";
-        output_path = QFileDialog::getSaveFileName(NULL, "Save File", "", output_info);
-    }
-    else
-    {
-        QDir output_dir(save_folder);
-        output_path = output_dir.filePath(output_name);
-    }
+    QDir output_dir(save_folder);
+    QString output_path = output_dir.filePath(output_name);
     if (input_extension == "JSON")
     {
         ifstream json_file((file_path).toStdString());
@@ -185,17 +179,21 @@ void convert_document_file(QWidget *parent, QString input_extension, QString out
         file_path = markdown_file;
         is_json = true;
     }
-    QObject::connect(converter, &MainDocumentConverter::conversionFinished, parent, [=](bool success, const QString &message) mutable
+    auto *converter = new MainDocumentConverter(this);
+    connect(converter, &MainDocumentConverter::update_result_message, this, [=](bool success, const QString &error)
     {
+        QString result_message;
         if (success)
         {
-            if (is_json)
-            {
-                QFile md_file(file_path);
-                md_file.remove();
-            }
+            result_message = QString("Success: %1.%2 has been converted to %3")
+            .arg(input_file_info.completeBaseName()).arg(input_extension.toLower()).arg(output_name);
         }
+        else
+        {
+            result_message = error.isEmpty() ? "File could not be converted" : error;
+        }
+        emit update_result_message(result_message, success);
         converter->deleteLater();
     });
-    converter->convert_document(file_path, output_path, input_extension, output_extension, capabilities);
+    converter->convert_document(file_path, output_path, input_extension, output_extension);
 }

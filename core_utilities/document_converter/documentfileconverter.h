@@ -7,7 +7,7 @@ class DocumentFileConverter
 {
     public:
         virtual ~DocumentFileConverter() {}
-        virtual void convert_document(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension, const DocumentFormatCapabilities &settings) = 0;
+        void convert_document(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension, const DocumentFormatCapabilities &settings);
 };
 
 #endif // DOCUMENTFILECONVERTER_H

@@ -23,7 +23,7 @@ DocumentPreferences::~DocumentPreferences()
 using json = nlohmann::json;
 using namespace std;
 
-bool initial_pres_metadata;
+bool initial_rm_metadata;
 bool initial_pres_formatting;
 bool initial_pres_media;
 bool initial_line_break;
@@ -31,7 +31,7 @@ bool initial_standalone;
 
 void DocumentPreferences::fetch_base_preferences()
 {
-    initial_pres_metadata = ui->preserve_metadata_cb->isChecked();
+    initial_rm_metadata = ui->rm_metadata_cb->isChecked();
     initial_pres_formatting = ui->preserve_formatting_cb->isChecked();
     initial_pres_media = ui->preserve_media_cb->isChecked();
     initial_line_break = ui->line_breaks_cb->isChecked();
@@ -40,11 +40,11 @@ void DocumentPreferences::fetch_base_preferences()
 
 void DocumentPreferences::set_tooltips()
 {
-    ui->preserve_metadata_cb->setToolTip("Applies to: DOCX, EPUB, HTML, JSON, PPTX, PDF, LATEX, ODT, RTF");
-    ui->preserve_formatting_cb->setToolTip("Applies to: DOCX, EPUB, HTML, PPTX, PDF, LATEX, ODT, RTF");
-    ui->preserve_media_cb->setToolTip("Applies to: DOCX, EPUB, HTML, PPTX, PDF, LATEX, ODT, RTF");
-    ui->line_breaks_cb->setToolTip("Applies to: HTML, MD, PDF, LATEX, ODT, RTF");
-    ui->standalone_cb->setToolTip("Applies to: EPUB, HTML, MD, PDF, LATEX");
+    ui->rm_metadata_cb->setToolTip("Applies to: DOCX, EPUB, HTML, JSON, LATEX, ODT, RTF, RTS, ORG");
+    ui->preserve_formatting_cb->setToolTip("Applies to: DOCX, EPUB, HTML, LATEX, ODT, RTF");
+    ui->preserve_media_cb->setToolTip("Applies to: DOCX, EPUB, HTML, LATEX, ODT, RTF, RTS, ORG");
+    ui->line_breaks_cb->setToolTip("Applies to: HTML, MD, LATEX, ODT, RTF, RTS, ORG");
+    ui->standalone_cb->setToolTip("Applies to: EPUB, HTML, MD, LATEX, RTS, ORG");
 }
 
 void DocumentPreferences::load_document_preferences()
@@ -61,8 +61,8 @@ void DocumentPreferences::load_document_preferences()
         if (load_data.contains("document"))
         {
             auto document_preferences = load_data["document"];
-            int pres_metadata = document_preferences["pres_metadata"];
-            if (pres_metadata == 2) {ui->preserve_metadata_cb->setCheckState(Qt::Checked);}
+            int rm_metadata = document_preferences["rm_metadata"];
+            if (rm_metadata == 2) {ui->rm_metadata_cb->setCheckState(Qt::Checked);}
             int pres_formatting = document_preferences["pres_formatting"];
             if (pres_formatting == 2) {ui->preserve_formatting_cb->setCheckState(Qt::Checked);}
             int pres_media = document_preferences["pres_media"];
@@ -78,7 +78,7 @@ void DocumentPreferences::load_document_preferences()
 
 void DocumentPreferences::check_boxes_states()
 {
-    if (initial_pres_metadata == ui->preserve_metadata_cb->isChecked() && initial_pres_formatting == ui->preserve_formatting_cb->isChecked() &&
+    if (initial_rm_metadata == ui->rm_metadata_cb->isChecked() && initial_pres_formatting == ui->preserve_formatting_cb->isChecked() &&
         initial_pres_media == ui->preserve_media_cb->isChecked() && initial_line_break == ui->line_breaks_cb->isChecked() &&
         initial_standalone == ui->standalone_cb->isChecked())
     {
@@ -112,7 +112,7 @@ void DocumentPreferences::on_save_preferences_clicked()
             json preference_data;
         }
     }
-    document_data["pres_metadata"] = (ui->preserve_metadata_cb->checkState());
+    document_data["rm_metadata"] = (ui->rm_metadata_cb->checkState());
     document_data["pres_formatting"] = (ui->preserve_formatting_cb->checkState());
     document_data["pres_media"] = (ui->preserve_media_cb->checkState());
     document_data["line_break"] = (ui->line_breaks_cb->checkState());
@@ -135,7 +135,7 @@ void DocumentPreferences::on_cancel_preferences_clicked()
     this->close();
 }
 
-void DocumentPreferences::on_preserve_metadata_cb_checkStateChanged(const Qt::CheckState &arg1)
+void DocumentPreferences::on_rm_metadata_cb_checkStateChanged(const Qt::CheckState &arg1)
 {
     check_boxes_states();
 }

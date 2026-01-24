@@ -29,7 +29,7 @@ private slots:
 
     void check_boxes_states();
 
-    void on_preserve_metadata_cb_checkStateChanged(const Qt::CheckState &arg1);
+    void on_rm_metadata_cb_checkStateChanged(const Qt::CheckState &arg1);
 
     void on_preserve_formatting_cb_checkStateChanged(const Qt::CheckState &arg1);
 
@@ -58,12 +58,13 @@ inline const QMap<QString, DocumentFormatCapabilities> document_capabilities =
         {"epub", {true, false, true, false, true}},
         {"html", {true, true, true, true, true}},
         {"json", {false, false, false, false, false}},
-        {"pptx",{true, true, true, false, false}},
         {"md", {true, false, false, true, true}},
-        {"pdf", {true, true, true, true, true}},
         {"tex", {true, true, false, true, true}},
         {"odt", {true, true, true, false, false}},
-        {"rtf", {true, false, true, false, false}}
+        {"rtf", {true, false, true, false, false}},
+        {"rst", {true, false, true, true, true}},
+        {"org", {true, false, true, true, true}},
+        {"ipynb", {false, false, false, false, false}}
 };
 
 #endif // DOCUMENTPREFERENCES_H
