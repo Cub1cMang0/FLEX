@@ -13,15 +13,13 @@
 #include <QDesktopServices>
 #include <filesystem>
 #include <fstream>
-#include "mainimageconverter.h"
-#include "mainvideoconverter.h"
-#include "maindocumentconverter.h"
-#include "mainarchiveconverter.h"
-#include "mainspreadconverter.h"
 #include "changesavelocation.h"
 #include "imagepreferences.h"
 #include "videoaudiopreferences.h"
 #include "documentpreferences.h"
+#include "spreadsheetpreferences.h"
+#include "archivepreferences.h"
+#include <bulkconvertmanager.h>
 #include "json.hpp"
 #include <archive.h>
 #include <archive_entry.h>
@@ -41,6 +39,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionImage_Preferences, &QAction::triggered, this, &MainWindow::change_image_preferences);
     connect(ui->actionVideo_Audio_Preferences, &QAction::triggered, this, &MainWindow::change_videoaudio_preferences);
     connect(ui->actionDocument_Preferences, &QAction::triggered, this, &MainWindow::change_document_preferences);
+    connect(ui->actionSpreadsheet_Preferenecs, &QAction::triggered, this, &MainWindow::change_spreadsheet_preferences);
+    connect(ui->actionArchives_Preferences, &QAction::triggered, this, &MainWindow::change_archive_preferences);
+    ui->pause_conversion->setEnabled(false);
+    ui->continue_conversion->setEnabled(false);
     check_save_location();
     setup_progress_bars();
 }
@@ -76,6 +78,20 @@ void MainWindow::change_document_preferences()
     DocumentPreferences document_preferences;
     document_preferences.setModal(true);
     document_preferences.exec();
+}
+
+void MainWindow::change_spreadsheet_preferences()
+{
+    SpreadsheetPreferences spreadsheet_preferences;
+    spreadsheet_preferences.setModal(true);
+    spreadsheet_preferences.exec();
+}
+
+void MainWindow::change_archive_preferences()
+{
+    ArchivePreferences archive_preferences;
+    archive_preferences.setModal(true);
+    archive_preferences.exec();
 }
 
 void MainWindow::setup_progress_bars()
@@ -134,27 +150,79 @@ void MainWindow::open_save_location()
 
 void MainWindow::convert_user_image(QString save_folder)
 {
-    ui->image_progress->setValue(0);
-    QString result_message = convert_image_file(ui->input_type_image->currentText(), ui->output_type_image->currentText(), save_folder);
-    if (result_message.left(1) == "S")
+    if (bcm)
     {
-        ui->image_progress->setValue(100);
+        bcm->deleteLater();
+        bcm = nullptr;
+    }
+    ui->image_progress->setValue(0);
+    ui->result_box->setReadOnly(false);
+    ui->result_box->clear();
+    ui->result_box->setReadOnly(true);
+    ui->select_file_images->setEnabled(false);
+    ui->convert_button_image->setEnabled(false);
+    ui->convert_button_image_save->setEnabled(false);
+    bcm = new BulkConvertManager(this);
+    bcm->set_file_type(FileType::Image);
+    if (save_folder == "Alternate")
+    {
+        QString output_path = QFileDialog::getExistingDirectory(NULL, "Select Folder");
+        if (output_path.isEmpty())
+        {
+            ui->image_progress->setValue(0);
+            ui->result_box->setReadOnly(false);
+            ui->result_box->setText("No location selected.");
+            ui->result_box->setReadOnly(true);
+            QTimer::singleShot(5000, this, [this]() {
+                ui->result_box->setReadOnly(false);
+                ui->result_box->clear();
+                ui->result_box->setReadOnly(true);
+            });
+            ui->select_file_images->setEnabled(true);
+            ui->convert_button_image->setEnabled(true);
+            ui->convert_button_image_save->setEnabled(true);
+            bcm->deleteLater();
+            return;
+        }
+        bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_image->currentText(), output_path);
     }
     else
     {
-        ui->image_progress->setValue(0);
+        bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_image->currentText(), save_folder);
     }
-    ui->result_box->setReadOnly(false);
-    ui->result_box->setText(result_message);
-    ui->result_box->setReadOnly(true);
-    QTimer::singleShot(5000, this, [this]() {
-        ui->result_box->setReadOnly(false);
-        ui->result_box->clear();
-        ui->result_box->setReadOnly(true);
-    });
+    connect(bcm, &BulkConvertManager::progress_updated,
+            this, [this](int finished, int total)
+            {
+                if (total > 0) {
+                    int percent = (finished * 100) / total;
+                    ui->image_progress->setValue(percent);
+                }
+            });
+    connect(bcm, &BulkConvertManager::finished,
+            this, [this]()
+            {
+                ui->image_progress->setValue(100);
+                ui->result_box->setReadOnly(false);
+                ui->result_box->setText("Image conversion finished.");
+                ui->result_box->setReadOnly(true);
+                QTimer::singleShot(5000, this, [this]() {
+                    ui->result_box->setReadOnly(false);
+                    ui->result_box->clear();
+                    ui->result_box->setReadOnly(true);
+                });
+                ui->select_file_images->setEnabled(true);
+                ui->convert_button_image->setEnabled(true);
+                ui->convert_button_image_save->setEnabled(true);
+                ui->pause_conversion->setEnabled(false);
+                ui->continue_conversion->setEnabled(false);
+                bcm->deleteLater();
+            });
+    ui->pause_conversion->setEnabled(true);
+    ui->continue_conversion->setEnabled(false);
+    bcm->start();
 }
 
-// Converts the user's file type to another and outputs a message of the result
+// Converts the user's provided image file(s)
 void MainWindow::on_convert_button_image_clicked()
 {
     convert_user_image(load_save_location());
@@ -195,18 +263,76 @@ void MainWindow::on_output_type_image_currentTextChanged(const QString &arg1)
     }
 }
 
+// Converts the user's provided video/audio file(s)
 void MainWindow::convert_user_av(QString save_folder)
 {
+    if (bcm)
+    {
+        bcm->deleteLater();
+        bcm = nullptr;
+    }
     ui->av_progress->setValue(0);
-    QString result_message = convert_video_file(ui->input_type_av->currentText(), ui->output_type_av->currentText(), ui->av_progress, save_folder);
     ui->result_box->setReadOnly(false);
-    ui->result_box->setText(result_message);
+    ui->result_box->clear();
     ui->result_box->setReadOnly(true);
-    QTimer::singleShot(5000, this, [this]() {
-        ui->result_box->setReadOnly(false);
-        ui->result_box->clear();
-        ui->result_box->setReadOnly(true);
-    });
+    ui->select_file_av->setEnabled(false);
+    ui->convert_button_av->setEnabled(false);
+    ui->convert_button_av_save->setEnabled(false);
+    bcm = new BulkConvertManager(this);
+    bcm->set_file_type(FileType::AV);
+    if (save_folder == "Alternate")
+    {
+        QString output_path = QFileDialog::getExistingDirectory(NULL, "Select Folder");
+        if (output_path.isEmpty())
+        {
+            ui->av_progress->setValue(0);
+            ui->result_box->setReadOnly(false);
+            ui->result_box->setText("No location selected.");
+            ui->result_box->setReadOnly(true);
+            QTimer::singleShot(5000, this, [this]() {
+                ui->result_box->setReadOnly(false);
+                ui->result_box->clear();
+                ui->result_box->setReadOnly(true);
+            });
+            bcm->deleteLater();
+            return;
+        }
+        bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_av->currentText(), output_path);
+    }
+    else
+    {
+        bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_av->currentText(), save_folder);
+    }
+    connect(bcm, &BulkConvertManager::progress_updated,
+            this, [this](int finished, int total)
+            {
+                if (total > 0) {
+                    int percent = (finished * 100) / total;
+                    ui->av_progress->setValue(percent);
+                }
+            });
+    connect(bcm, &BulkConvertManager::finished,
+            this, [this]()
+            {
+                ui->av_progress->setValue(100);
+                ui->result_box->setReadOnly(false);
+                ui->result_box->setText("Video/Audio conversion finished.");
+                ui->result_box->setReadOnly(true);
+                QTimer::singleShot(5000, this, [this]() {
+                    ui->result_box->setReadOnly(false);
+                    ui->result_box->clear();
+                    ui->result_box->setReadOnly(true);
+                });
+                ui->select_file_av->setEnabled(true);
+                ui->convert_button_av->setEnabled(true);
+                ui->convert_button_av_save->setEnabled(true);
+                ui->pause_conversion->setEnabled(false);
+                ui->continue_conversion->setEnabled(false);
+                bcm->deleteLater();
+            });
+    ui->pause_conversion->setEnabled(true);
+    ui->continue_conversion->setEnabled(false);
+    bcm->start();
 }
 
 void MainWindow::on_convert_button_av_clicked()
@@ -249,34 +375,76 @@ void MainWindow::on_output_type_av_currentTextChanged(const QString &arg1)
     }
 }
 
-// Converts the user's provided document(s)
+// Converts the user's provided document file(s)
 void MainWindow::convert_user_document(QString save_folder)
 {
-    ui->doc_progress->setMinimum(0);
-    ui->doc_progress->setMaximum(0);
-    MainDocumentConverter *converter = new MainDocumentConverter(this);
-    QObject::connect(converter, &MainDocumentConverter::conversionFinished, [this](bool success, const QString &message) mutable
+    if (bcm)
     {
-        ui->result_box->setReadOnly(false);
-        ui->result_box->setText(message);
-        ui->result_box->setReadOnly(true);
-        ui->doc_progress->setRange(0, 1);
-        if (success)
-        {
-            ui->doc_progress->setValue(1);
-        }
-        else
+        bcm->deleteLater();
+        bcm = nullptr;
+    }
+    ui->doc_progress->setValue(0);
+    ui->result_box->setReadOnly(false);
+    ui->result_box->clear();
+    ui->result_box->setReadOnly(true);
+    ui->select_file_doc->setEnabled(false);
+    ui->convert_button_doc->setEnabled(false);
+    ui->convert_button_doc_save->setEnabled(false);
+    bcm = new BulkConvertManager(this);
+    bcm->set_file_type(FileType::Doc);
+    if (save_folder == "Alternate")
+    {
+        QString output_path = QFileDialog::getExistingDirectory(NULL, "Select Folder");
+        if (output_path.isEmpty())
         {
             ui->doc_progress->setValue(0);
+            ui->result_box->setReadOnly(false);
+            ui->result_box->setText("No location selected.");
+            ui->result_box->setReadOnly(true);
+            QTimer::singleShot(5000, this, [this]() {
+                ui->result_box->setReadOnly(false);
+                ui->result_box->clear();
+                ui->result_box->setReadOnly(true);
+            });
+            bcm->deleteLater();
+            return;
         }
-    });
-    convert_document_file(this, ui->input_type_doc->currentText(), ui->output_type_doc->currentText(), converter, save_folder);
-    QTimer::singleShot(5000, this, [this]()
+        bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_doc->currentText(), output_path);
+    }
+    else
     {
-        ui->result_box->setReadOnly(false);
-        ui->result_box->clear();
-        ui->result_box->setReadOnly(true);
-    });
+        bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_doc->currentText(), save_folder);
+    }
+    connect(bcm, &BulkConvertManager::progress_updated,
+            this, [this](int finished, int total)
+            {
+                if (total > 0) {
+                    int percent = (finished * 100) / total;
+                    ui->doc_progress->setValue(percent);
+                }
+            });
+    connect(bcm, &BulkConvertManager::finished,
+            this, [this]()
+            {
+                ui->doc_progress->setValue(100);
+                ui->result_box->setReadOnly(false);
+                ui->result_box->setText("Document conversion finished.");
+                ui->result_box->setReadOnly(true);
+                QTimer::singleShot(5000, this, [this]() {
+                    ui->result_box->setReadOnly(false);
+                    ui->result_box->clear();
+                    ui->result_box->setReadOnly(true);
+                });
+                ui->select_file_doc->setEnabled(true);
+                ui->convert_button_doc->setEnabled(true);
+                ui->convert_button_doc_save->setEnabled(true);
+                ui->pause_conversion->setEnabled(false);
+                ui->continue_conversion->setEnabled(false);
+                bcm->deleteLater();
+            });
+    ui->pause_conversion->setEnabled(true);
+    ui->continue_conversion->setEnabled(false);
+    bcm->start();
 }
 
 void MainWindow::on_convert_button_doc_clicked()
@@ -320,32 +488,188 @@ void MainWindow::on_output_type_doc_currentTextChanged(const QString &arg1)
     }
 }
 
+// Converts the user's provided spreadsheet file(s)
+void MainWindow::convert_user_spreadsheet(QString save_folder)
+{
+    if (bcm)
+    {
+        bcm->deleteLater();
+        bcm = nullptr;
+    }
+    ui->spread_progress->setValue(0);
+    ui->result_box->setReadOnly(false);
+    ui->result_box->clear();
+    ui->result_box->setReadOnly(true);
+    ui->select_file_ss->setEnabled(false);
+    ui->convert_button_spread->setEnabled(false);
+    ui->convert_button_spread_save->setEnabled(false);
+    bcm = new BulkConvertManager(this);
+    bcm->set_file_type(FileType::SS);
+    if (save_folder == "Alternate")
+    {
+        QString output_path = QFileDialog::getExistingDirectory(NULL, "Select Folder");
+        if (output_path.isEmpty())
+        {
+            ui->spread_progress->setValue(0);
+            ui->result_box->setReadOnly(false);
+            ui->result_box->setText("No location selected.");
+            ui->result_box->setReadOnly(true);
+            QTimer::singleShot(5000, this, [this]() {
+                ui->result_box->setReadOnly(false);
+                ui->result_box->clear();
+                ui->result_box->setReadOnly(true);
+            });
+            bcm->deleteLater();
+            return;
+        }
+        bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_spread->currentText(), output_path);
+    }
+    else
+    {
+        bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_spread->currentText(), save_folder);
+    }
+    connect(bcm, &BulkConvertManager::progress_updated,
+            this, [this](int finished, int total)
+            {
+                if (total > 0) {
+                    int percent = (finished * 100) / total;
+                    ui->spread_progress->setValue(percent);
+                }
+            });
+    connect(bcm, &BulkConvertManager::finished,
+            this, [this]()
+            {
+                ui->spread_progress->setValue(100);
+                ui->result_box->setReadOnly(false);
+                ui->result_box->setText("Spreadsheet conversion finished.");
+                ui->result_box->setReadOnly(true);
+                QTimer::singleShot(5000, this, [this]() {
+                    ui->result_box->setReadOnly(false);
+                    ui->result_box->clear();
+                    ui->result_box->setReadOnly(true);
+                });
+                ui->select_file_ss->setEnabled(true);
+                ui->convert_button_spread->setEnabled(true);
+                ui->convert_button_spread_save->setEnabled(true);
+                ui->pause_conversion->setEnabled(false);
+                ui->continue_conversion->setEnabled(false);
+                bcm->deleteLater();
+            });
+    ui->pause_conversion->setEnabled(true);
+    ui->continue_conversion->setEnabled(false);
+    bcm->start();
+}
+
+void MainWindow::on_convert_button_spread_clicked()
+{
+    convert_user_spreadsheet(load_save_location());
+}
+
+void MainWindow::on_convert_button_spread_save_clicked()
+{
+    convert_user_spreadsheet("Alternate");
+}
+
+void MainWindow::on_input_type_spread_currentTextChanged(const QString &arg1)
+{
+    QString opposite_selection = ui->output_type_spread->currentText();
+    if (arg1 == opposite_selection)
+    {
+        ui->convert_button_spread->setEnabled(false);
+        ui->convert_button_spread_save->setEnabled(false);
+    }
+    else
+    {
+        ui->convert_button_spread->setEnabled(true);
+        ui->convert_button_spread_save->setEnabled(true);
+    }
+}
+
+void MainWindow::on_output_type_spread_currentTextChanged(const QString &arg1)
+{
+    QString opposite_selection = ui->input_type_spread->currentText();
+    if (arg1 == opposite_selection)
+    {
+        ui->convert_button_spread->setEnabled(false);
+        ui->convert_button_spread_save->setEnabled(false);
+    }
+    else
+    {
+        ui->convert_button_spread->setEnabled(true);
+        ui->convert_button_spread_save->setEnabled(true);
+    }
+}
+
+// Converts the user's provided archive file(s)
 void MainWindow::convert_user_archive(QString save_folder)
 {
-    ui->archives_progress->setMinimum(0);
-    ui->archives_progress->setMaximum(0);
-    MainArchiveConverter *converter = new MainArchiveConverter(this);
-    QObject::connect(converter, &MainArchiveConverter::conversion_finished,
-        [this](bool success, const QString &message) mutable {
+    if (bcm)
+    {
+        bcm->deleteLater();
+        bcm = nullptr;
+    }
+    ui->av_progress->setValue(0);
+    ui->result_box->setReadOnly(false);
+    ui->result_box->clear();
+    ui->result_box->setReadOnly(true);
+    ui->select_file_ar->setEnabled(false);
+    ui->convert_button_archive->setEnabled(false);
+    ui->convert_button_archive_save->setEnabled(false);
+    bcm = new BulkConvertManager(this);
+    bcm->set_file_type(FileType::Archive);
+    if (save_folder == "Alternate")
+    {
+        QString output_path = QFileDialog::getExistingDirectory(NULL, "Select Folder");
+        if (output_path.isEmpty())
+        {
+            ui->archives_progress->setValue(0);
             ui->result_box->setReadOnly(false);
-            ui->result_box->setText(message);
+            ui->result_box->setText("No location selected.");
             ui->result_box->setReadOnly(true);
-            ui->archives_progress->setRange(0, 1);
-            if (success)
+            QTimer::singleShot(5000, this, [this]() {
+                ui->result_box->setReadOnly(false);
+                ui->result_box->clear();
+                ui->result_box->setReadOnly(true);
+            });
+            bcm->deleteLater();
+            return;
+        }
+        bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_archive->currentText(), output_path);
+    }
+    else
+    {
+        bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_archive->currentText(), save_folder);
+    }
+    connect(bcm, &BulkConvertManager::progress_updated,
+            this, [this](int finished, int total)
             {
-                ui->archives_progress->setValue(1);
-            }
-            else
+                if (total > 0) {
+                    int percent = (finished * 100) / total;
+                    ui->archives_progress->setValue(percent);
+                }
+            });
+    connect(bcm, &BulkConvertManager::finished,
+            this, [this]()
             {
-                ui->archives_progress->setValue(0);
-            }
-        });
-    convert_archive_file(this, ui->input_type_archive->currentText(), ui->output_type_archive->currentText(), converter, save_folder);
-    QTimer::singleShot(5000, this, [this]() {
-        ui->result_box->setReadOnly(false);
-        ui->result_box->clear();
-        ui->result_box->setReadOnly(true);
-    });
+                ui->archives_progress->setValue(100);
+                ui->result_box->setReadOnly(false);
+                ui->result_box->setText("Archive conversion finished.");
+                ui->result_box->setReadOnly(true);
+                QTimer::singleShot(5000, this, [this]() {
+                    ui->result_box->setReadOnly(false);
+                    ui->result_box->clear();
+                    ui->result_box->setReadOnly(true);
+                });
+                ui->select_file_ar->setEnabled(true);
+                ui->convert_button_archive->setEnabled(true);
+                ui->convert_button_archive_save->setEnabled(true);
+                ui->pause_conversion->setEnabled(false);
+                ui->continue_conversion->setEnabled(false);
+                bcm->deleteLater();
+            });
+    ui->pause_conversion->setEnabled(true);
+    ui->continue_conversion->setEnabled(false);
+    bcm->start();
 }
 
 
@@ -391,77 +715,118 @@ void MainWindow::on_output_type_archive_currentTextChanged(const QString &arg1)
     }
 }
 
-void MainWindow::convert_user_spreadsheet(QString save_folder)
-{
-    ui->spread_progress->setMinimum(0);
-    ui->spread_progress->setMaximum(0);
-    MainSpreadConverter *converter = new MainSpreadConverter(this);
-    QObject::connect(converter, &MainSpreadConverter::conversion_finished, [this](bool success, const QString &message) mutable
-    {
-        ui->result_box->setReadOnly(false);
-        ui->result_box->setText(message);
-        ui->result_box->setReadOnly(true);
-        ui->spread_progress->setRange(0, 1);
-        if (success)
-        {
-            ui->spread_progress->setValue(1);
-        }
-        else
-        {
-            ui->spread_progress->setValue(0);
-        }
-    });
-    convert_spread_file(this, ui->input_type_spread->currentText(), ui->output_type_spread->currentText(), converter, save_folder);
-    QTimer::singleShot(5000, this, [this]()
-    {
-        ui->result_box->setReadOnly(false);
-        ui->result_box->clear();
-        ui->result_box->setReadOnly(true);
-    });
-}
-
-void MainWindow::on_convert_button_spread_clicked()
-{
-    convert_user_spreadsheet(load_save_location());
-}
-
-void MainWindow::on_convert_button_spread_save_clicked()
-{
-    convert_user_spreadsheet("Alternate");
-}
-
-void MainWindow::on_input_type_spread_currentTextChanged(const QString &arg1)
-{
-    QString opposite_selection = ui->output_type_spread->currentText();
-    if (arg1 == opposite_selection)
-    {
-        ui->convert_button_spread->setEnabled(false);
-        ui->convert_button_spread_save->setEnabled(false);
-    }
-    else
-    {
-        ui->convert_button_spread->setEnabled(true);
-        ui->convert_button_spread_save->setEnabled(true);
-    }
-}
-
-void MainWindow::on_output_type_spread_currentTextChanged(const QString &arg1)
-{
-    QString opposite_selection = ui->input_type_spread->currentText();
-    if (arg1 == opposite_selection)
-    {
-        ui->convert_button_spread->setEnabled(false);
-        ui->convert_button_spread_save->setEnabled(false);
-    }
-    else
-    {
-        ui->convert_button_spread->setEnabled(true);
-        ui->convert_button_spread_save->setEnabled(true);
-    }
-}
-
 void MainWindow::on_drag_n_drop_area_textChanged()
 {
-    ui->drag_n_drop_text->setText("");
+    ui->drag_n_drop_text->hide();
+}
+
+
+void MainWindow::on_clear_conversion_clicked()
+{
+    ui->drag_n_drop_area->clearFiles();
+    ui->drag_n_drop_text->show();
+}
+
+
+void MainWindow::on_select_file_images_clicked()
+{
+    QString input_ext = ui->input_type_image->currentText();
+    QString output_ext = ui->output_type_image->currentText();
+    QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
+    QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
+    ui->drag_n_drop_area->clearFiles();
+    ui->drag_n_drop_area->setText(file_path);
+    if (!file_path.isEmpty())
+    {
+        ui->drag_n_drop_area->clearFiles();
+        ui->drag_n_drop_area->addFile(file_path);
+    }
+}
+
+void MainWindow::on_select_file_av_clicked()
+{
+    QString input_ext = ui->input_type_av->currentText();
+    QString output_ext = ui->output_type_av->currentText();
+    QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
+    QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
+    ui->drag_n_drop_area->clearFiles();
+    ui->drag_n_drop_area->setText(file_path);
+    if (!file_path.isEmpty())
+    {
+        ui->drag_n_drop_area->clearFiles();
+        ui->drag_n_drop_area->addFile(file_path);
+    }
+}
+
+
+void MainWindow::on_select_file_doc_clicked()
+{
+    QString input_ext = ui->input_type_doc->currentText();
+    QString output_ext = ui->output_type_doc->currentText();
+    QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
+    QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
+    ui->drag_n_drop_area->clearFiles();
+    ui->drag_n_drop_area->setText(file_path);
+    if (!file_path.isEmpty())
+    {
+        ui->drag_n_drop_area->clearFiles();
+        ui->drag_n_drop_area->addFile(file_path);
+    }
+}
+
+
+void MainWindow::on_select_file_ss_clicked()
+{
+    QString input_ext = ui->input_type_spread->currentText();
+    QString output_ext = ui->output_type_spread->currentText();
+    QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
+    QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
+    ui->drag_n_drop_area->clearFiles();
+    ui->drag_n_drop_area->setText(file_path);
+    if (!file_path.isEmpty())
+    {
+        ui->drag_n_drop_area->clearFiles();
+        ui->drag_n_drop_area->addFile(file_path);
+    }
+}
+
+
+void MainWindow::on_select_file_ar_clicked()
+{
+    QString input_ext = ui->input_type_av->currentText();
+    QString output_ext = ui->output_type_av->currentText();
+    QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
+    QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
+    ui->drag_n_drop_area->clearFiles();
+    ui->drag_n_drop_area->setText(file_path);
+    if (!file_path.isEmpty())
+    {
+        ui->drag_n_drop_area->clearFiles();
+        ui->drag_n_drop_area->addFile(file_path);
+    }
+}
+
+
+void MainWindow::on_pause_conversion_clicked()
+{
+    if (!bcm)
+    {
+        return;
+    }
+    ui->pause_conversion->setEnabled(false);
+    ui->continue_conversion->setEnabled(true);
+    bcm->pause();
+}
+
+
+void MainWindow::on_continue_conversion_clicked()
+{
+    if (!bcm)
+    {
+        return;
+    }
+    ui->pause_conversion->setEnabled(true);
+    ui->continue_conversion->setEnabled(false);
+    bcm->resume();
 }
 
