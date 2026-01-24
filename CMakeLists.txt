@@ -38,11 +38,15 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         mainarchiveconverter.h mainarchiveconverter.cpp
         spreadfileconverter.h
         mainspreadconverter.h mainspreadconverter.cpp
-        draganddrop.h
+
         imagepreferences.h imagepreferences.cpp imagepreferences.ui
         videoaudiopreferences.h videoaudiopreferences.cpp videoaudiopreferences.ui
         documentpreferences.h documentpreferences.cpp documentpreferences.ui
         spreadsheetpreferences.h spreadsheetpreferences.cpp spreadsheetpreferences.ui
+        archivepreferences.h archivepreferences.cpp archivepreferences.ui
+        draganddrop.h
+        bulkconvertmanager.h bulkconvertmanager.cpp
+
 
 
 
