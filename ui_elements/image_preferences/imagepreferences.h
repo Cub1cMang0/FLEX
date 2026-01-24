@@ -18,7 +18,7 @@ class ImagePreferences : public QDialog
         void on_quality_cb_stateChanged(int state);
         void on_save_image_preferences_clicked();
         void on_cancel_image_preferences_clicked();
-        void fetch_initial_cb_states(QString &aspect_ratio, QPair<Qt::CheckState, QString> &quality, Qt::CheckState &grayscale, Qt::CheckState &alpha, QPair<Qt::CheckState, QString> &bit_depth);
+        void fetch_base_preferences();
         void load_image_preferences();
         void on_aspect_ratio_currentTextChanged(const QString &arg1);
         void on_quality_cb_checkStateChanged(const Qt::CheckState &arg1);
@@ -28,6 +28,7 @@ class ImagePreferences : public QDialog
         void on_bit_depth_cb_checkStateChanged(const Qt::CheckState &arg1);
         void on_bit_depth_currentTextChanged(const QString &arg1);
         void check_checkbox_states();
+
     private:
         Ui::ImagePreferences *ui;
 };

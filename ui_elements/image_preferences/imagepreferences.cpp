@@ -33,15 +33,15 @@ Qt::CheckState initial_grayscale;
 Qt::CheckState initial_alpha;
 QPair<Qt::CheckState, QString> initial_bit_depth;
 
-void ImagePreferences::fetch_initial_cb_states(QString &aspect_ratio, QPair<Qt::CheckState, QString> &quality, Qt::CheckState &grayscale, Qt::CheckState &alpha, QPair<Qt::CheckState, QString> &bit_depth)
+void ImagePreferences::fetch_base_preferences()
 {
-    aspect_ratio = ui->aspect_ratio->currentText();
-    quality.first = ui->quality_cb->checkState();
-    quality.second = ui->quality_range->text();
-    grayscale = ui->gray_scale_cb->checkState();
-    alpha = ui->remove_alpha_cb->checkState();
-    bit_depth.first = ui->bit_depth_cb->checkState();
-    bit_depth.second = ui->bit_depth->currentText();
+    initial_aspect_ratio = ui->aspect_ratio->currentText();
+    initial_quality.first = ui->quality_cb->checkState();
+    initial_quality.second = ui->quality_range->text();
+    initial_grayscale = ui->gray_scale_cb->checkState();
+    initial_alpha = ui->remove_alpha_cb->checkState();
+    initial_bit_depth.first = ui->bit_depth_cb->checkState();
+    initial_bit_depth.second = ui->bit_depth->currentText();
 }
 
 void ImagePreferences::load_image_preferences()
@@ -53,7 +53,7 @@ void ImagePreferences::load_image_preferences()
     ifstream save_json(json_path.toStdString());
     if (!save_json.is_open())
     {
-        fetch_initial_cb_states(initial_aspect_ratio, initial_quality, initial_grayscale, initial_alpha, initial_bit_depth);
+        fetch_base_preferences();
     }
     else
     {
@@ -93,6 +93,7 @@ void ImagePreferences::load_image_preferences()
     ui->cancel_image_preferences->setEnabled(false);
     if (ui->quality_cb->checkState() == Qt::Unchecked) {ui->quality_range->setReadOnly(true);}
     if (ui->bit_depth_cb->checkState() == Qt::Unchecked) {ui->bit_depth->setEnabled(false);}
+    fetch_base_preferences();
 }
 
 void ImagePreferences::check_checkbox_states()
@@ -164,7 +165,7 @@ void ImagePreferences::on_save_image_preferences_clicked()
         output_file.close();
         ui->save_image_preferences->setEnabled(false);
         ui->cancel_image_preferences->setEnabled(false);
-        fetch_initial_cb_states(initial_aspect_ratio, initial_quality, initial_grayscale, initial_alpha, initial_bit_depth);
+        fetch_base_preferences();
     }
 }
 
