@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Video/Audio Preferences</string>
   </property>
   <widget class="QLabel" name="resolution_label">
    <property name="geometry">
@@ -39,6 +39,9 @@
      <width>121</width>
      <height>24</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This Applies To: Video Files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <item>
     <property name="text">
@@ -118,6 +121,9 @@
      <height>24</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This Applies To: Video Files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
    <item>
     <property name="text">
      <string>N/A</string>
@@ -184,6 +190,9 @@
      <height>21</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This Applies To: Video Files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
    <property name="maximum">
     <number>4</number>
    </property>
@@ -248,6 +257,9 @@
      <width>121</width>
      <height>24</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This Applies To: Image Files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <item>
     <property name="text">
@@ -343,6 +355,9 @@
      <height>24</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This Applies To: Video Files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
    <item>
     <property name="text">
      <string>N/A</string>
@@ -383,6 +398,9 @@
      <height>24</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This Applies To: Image Files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
    <item>
     <property name="text">
      <string>N/A</string>
@@ -422,6 +440,9 @@
      <width>121</width>
      <height>24</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This Applies To: Image Files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <item>
     <property name="text">
@@ -468,6 +489,9 @@
      <height>24</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This Applies To: Image Files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
    <item>
     <property name="text">
      <string>N/A</string>
@@ -498,7 +522,7 @@
    <property name="geometry">
     <rect>
      <x>130</x>
-     <y>460</y>
+     <y>420</y>
      <width>111</width>
      <height>24</height>
     </rect>
@@ -511,112 +535,13 @@
    <property name="geometry">
     <rect>
      <x>350</x>
-     <y>460</y>
+     <y>420</y>
      <width>111</width>
      <height>24</height>
     </rect>
    </property>
    <property name="text">
     <string>Cancel Preferences</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="audio_bulk_label">
-   <property name="geometry">
-    <rect>
-     <x>80</x>
-     <y>350</y>
-     <width>241</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Convert Audio in Bulk: </string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="audio_bulk_cb">
-   <property name="geometry">
-    <rect>
-     <x>490</x>
-     <y>360</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>9</pointsize>
-    </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
-	border: 1px solid grey;
-	border-radius: 4px;
-	color: white;
-}
-
-QCheckBox::indicator:checked {
-	background: #32a6ff;
-}</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="iconSize">
-    <size>
-     <width>16</width>
-     <height>16</height>
-    </size>
-   </property>
-  </widget>
-  <widget class="QLabel" name="vide_bulk_label">
-   <property name="geometry">
-    <rect>
-     <x>80</x>
-     <y>390</y>
-     <width>241</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Convert Video in Bulk: </string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="video_bulk_cb">
-   <property name="geometry">
-    <rect>
-     <x>490</x>
-     <y>400</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
-	border: 1px solid grey;
-	border-radius: 4px;
-	color: white;
-}
-
-QCheckBox::indicator:checked {
-	background: #32a6ff;
-}</string>
-   </property>
-   <property name="text">
-    <string/>
    </property>
   </widget>
  </widget>

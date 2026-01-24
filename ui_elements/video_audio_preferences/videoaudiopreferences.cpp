@@ -32,6 +32,7 @@ QString initial_channel;
 QString initial_audio_bitrate;
 QString initial_audio_codec;
 
+
 void VideoAudioPreferences::fetch_base_preferences()
 {
     initial_resolution = ui->video_resolution->currentText();
@@ -42,15 +43,24 @@ void VideoAudioPreferences::fetch_base_preferences()
     initial_channel = ui->channels->currentText();
     initial_audio_bitrate = ui->audio_bitrate->currentText();
     initial_audio_codec = ui->audio_codec->currentText();
+
 }
 
 void VideoAudioPreferences::set_slider(QString level)
 {
-    if (level == "N/A") {ui->video_br_slider->setValue(0);}
-    if (level == "Low") {ui->video_br_slider->setValue(1);}
-    if (level == "Medium") {ui->video_br_slider->setValue(2);}
-    if (level == "High") {ui->video_br_slider->setValue(3);}
-    if (level == "Very High") {ui->video_br_slider->setValue(4);}
+    map<string, int> level_map =
+    {
+        {"N/A", 0},
+        {"Low", 1},
+        {"Medium", 2},
+        {"High", 3},
+        {"Very High", 4}
+    };
+    string level_str = level.toStdString();
+    if (level_map.find(level_str) != level_map.end())
+    {
+        ui->video_br_slider->setValue(level_map[level_str]);
+    }
     ui->video_bitrate_level->setText(level);
 }
 
@@ -234,4 +244,3 @@ void VideoAudioPreferences::on_audio_codec_currentTextChanged(const QString &arg
 {
     check_boxes_states();
 }
-
