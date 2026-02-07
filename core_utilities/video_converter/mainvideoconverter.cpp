@@ -72,6 +72,9 @@ QString set_audio_channel(QString channel)
 
 void MainVideoConverter::convert_video(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
 {
+    QFileInfo input_file_info(input_path);
+    QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
+    QString complete_output = QDir(output_path).filePath(output_name);
     QStringList arguments;
     arguments << "-y" << "-i" << input_path << "-progress" << "pipe:1";
     ffmpeg_process = new QProcess(this);
@@ -121,50 +124,30 @@ void MainVideoConverter::convert_video(const QString &input_path, const QString 
         if (audio_bitrate != "N/A") {arguments << "-b:a" << audio_bitrate;}
         if (audio_codec != "N/A") {arguments << "-c:a" << audio_codec.toLower();}
     }
-    arguments << output_path;
+    arguments << complete_output;
     ffmpeg_process->setArguments(arguments);
     connect(ffmpeg_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, [=](int exitCode, QProcess::ExitStatus status)
     {
-        if (exitCode != 0)
+        bool success = (exitCode == 0 && status == QProcess::NormalExit);
+        QString result;
+        if (!success)
         {
-            QByteArray error = ffmpeg_process->readAllStandardError();
-            emit update_av_progress(0);
+            result = QString::fromUtf8(ffmpeg_process->readAllStandardError());
+            if (result.isEmpty())
+            {
+                result = "Video/Audio could not be converted.";
+            }
+            emit update_av_progress(result, success);
         }
         else
         {
-            emit update_av_progress(100);
+            QFileInfo input_file_info(input_path);
+            QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
+            result = QString("Success: %1.%2 has been converted to %3")
+            .arg(input_file_info.completeBaseName()).arg(input_extension.toLower()).arg(output_name);
+            emit update_av_progress(result, success);
         }
         ffmpeg_process->deleteLater();
     });
     ffmpeg_process->start();
-}
-
-void MainVideoConverter::convert_video_file(QString file_path, QString input_extension, QString output_extension, QString save_folder)
-{
-    if (file_path.isEmpty())
-    {
-        emit update_result_message("No video/audio file selected", false);
-        return;
-    }
-    QFileInfo input_file_info(file_path);
-    QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
-    QDir output_dir(save_folder);
-    QString output_path = output_dir.filePath(output_name);
-    auto *converter = new MainVideoConverter(this);
-    connect(converter, &MainVideoConverter::update_result_message, this, [=](bool success, const QString &error)
-    {
-        QString result_message;
-        if (success)
-        {
-            result_message = QString("Success: %1.%2 has been converted to %3")
-                .arg(input_file_info.completeBaseName()).arg(input_extension.toLower()).arg(output_name);
-        }
-        else
-        {
-            result_message = error.isEmpty() ? "File could not be converted" : error;
-        }
-        emit update_result_message(result_message, success);
-        converter->deleteLater();
-    });
-    converter->convert_video(file_path, output_path, input_extension, output_extension);
 }
