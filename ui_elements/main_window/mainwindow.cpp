@@ -45,10 +45,18 @@ MainWindow::MainWindow(QWidget *parent)
     ui->continue_conversion->setEnabled(false);
     check_save_location();
     setup_progress_bars();
+    auto *model = ui->drag_n_drop_area->model();
+    connect(model, &QAbstractItemModel::rowsInserted, this, &MainWindow::dnd_label_visibility);
+    connect(model, &QAbstractItemModel::rowsRemoved, this, &MainWindow::dnd_label_visibility);
 }
 
 MainWindow::~MainWindow()
 {
+    if (bcm) {
+        bcm->disconnect();
+        delete bcm;
+        bcm = nullptr;
+    }
     delete ui;
 }
 
@@ -105,6 +113,12 @@ void MainWindow::setup_progress_bars()
     ui->spread_progress->setValue(0);
 }
 
+void MainWindow::dnd_label_visibility()
+{
+    const bool has_files = ui->drag_n_drop_area->count() > 0;
+    ui->drag_n_drop_text->setVisible(!has_files);
+}
+
 void MainWindow::check_save_location()
 {
     QString source_location = QString(__FILE__);
@@ -152,6 +166,7 @@ void MainWindow::convert_user_image(QString save_folder)
 {
     if (bcm)
     {
+        disconnect(bcm, nullptr, this, nullptr);
         bcm->deleteLater();
         bcm = nullptr;
     }
@@ -181,7 +196,12 @@ void MainWindow::convert_user_image(QString save_folder)
             ui->select_file_images->setEnabled(true);
             ui->convert_button_image->setEnabled(true);
             ui->convert_button_image_save->setEnabled(true);
-            bcm->deleteLater();
+            if (bcm)
+            {
+                disconnect(bcm, nullptr, this, nullptr);
+                bcm->deleteLater();
+                bcm = nullptr;
+            }
             return;
         }
         bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_image->currentText(), output_path);
@@ -190,33 +210,67 @@ void MainWindow::convert_user_image(QString save_folder)
     {
         bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_image->currentText(), save_folder);
     }
-    connect(bcm, &BulkConvertManager::progress_updated,
-            this, [this](int finished, int total)
-            {
-                if (total > 0) {
-                    int percent = (finished * 100) / total;
-                    ui->image_progress->setValue(percent);
-                }
-            });
-    connect(bcm, &BulkConvertManager::finished,
-            this, [this]()
-            {
-                ui->image_progress->setValue(100);
-                ui->result_box->setReadOnly(false);
-                ui->result_box->setText("Image conversion finished.");
-                ui->result_box->setReadOnly(true);
-                QTimer::singleShot(5000, this, [this]() {
-                    ui->result_box->setReadOnly(false);
-                    ui->result_box->clear();
-                    ui->result_box->setReadOnly(true);
-                });
-                ui->select_file_images->setEnabled(true);
-                ui->convert_button_image->setEnabled(true);
-                ui->convert_button_image_save->setEnabled(true);
-                ui->pause_conversion->setEnabled(false);
-                ui->continue_conversion->setEnabled(false);
-                bcm->deleteLater();
-            });
+    og_file_paths = ui->drag_n_drop_area->get_files();
+    connect(bcm, &BulkConvertManager::progress_updated, this, [this](int finished, int total)
+    {
+        if (total > 0) {
+            int percent = (finished * 100) / total;
+            ui->image_progress->setValue(percent);
+        }
+    });
+    connect(bcm, &BulkConvertManager::job_status_updated, this, [this](int job_index, ConversionStatus status)
+    {
+        QString file_path = og_file_paths[job_index];
+        switch (status)
+        {
+            case ConversionStatus::Waiting:
+                file_path = file_path + QString::fromUtf8(" ⌛");
+                break;
+            case ConversionStatus::Converting:
+                file_path = file_path + QString::fromUtf8(" 🔄️");
+                break;
+            case ConversionStatus::Skipped:
+                file_path = file_path + QString::fromUtf8(" ⏭️️");
+                break;
+            case ConversionStatus::Failed:
+                file_path = file_path + QString::fromUtf8(" ❌");
+                break;
+            case ConversionStatus::Complete:
+                file_path = file_path + QString::fromUtf8(" ✅");
+                break;
+        }
+        ui->drag_n_drop_area->update_file_path(job_index, file_path);
+    });
+    connect(bcm, &BulkConvertManager::finished, this, [this]()
+    {
+        ui->image_progress->setValue(100);
+        ui->result_box->setReadOnly(false);
+        if (bcm->total_success())
+        {
+            ui->result_box->setText("Image conversion finished.");
+        }
+        else
+        {
+            ui->result_box->setText(QString("%1 of %2 image conversions succeeded.").arg(bcm->succeeded).arg(bcm->job_count));
+        }
+        ui->result_box->setReadOnly(true);
+        QTimer::singleShot(5000, this, [this]() {
+            ui->result_box->setReadOnly(false);
+            ui->result_box->clear();
+            ui->result_box->setReadOnly(true);
+        });
+        ui->select_file_images->setEnabled(true);
+        ui->convert_button_image->setEnabled(true);
+        ui->convert_button_image_save->setEnabled(true);
+        ui->pause_conversion->setEnabled(false);
+        ui->continue_conversion->setEnabled(false);
+        if (bcm)
+        {
+            disconnect(bcm, nullptr, this, nullptr);
+            bcm->deleteLater();
+            bcm = nullptr;
+        }
+    });
     ui->pause_conversion->setEnabled(true);
     ui->continue_conversion->setEnabled(false);
     bcm->start();
@@ -268,6 +322,7 @@ void MainWindow::convert_user_av(QString save_folder)
 {
     if (bcm)
     {
+        disconnect(bcm, nullptr, this, nullptr);
         bcm->deleteLater();
         bcm = nullptr;
     }
@@ -294,7 +349,12 @@ void MainWindow::convert_user_av(QString save_folder)
                 ui->result_box->clear();
                 ui->result_box->setReadOnly(true);
             });
-            bcm->deleteLater();
+            if (bcm)
+            {
+                disconnect(bcm, nullptr, this, nullptr);
+                bcm->deleteLater();
+                bcm = nullptr;
+            }
             return;
         }
         bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_av->currentText(), output_path);
@@ -303,33 +363,60 @@ void MainWindow::convert_user_av(QString save_folder)
     {
         bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_av->currentText(), save_folder);
     }
-    connect(bcm, &BulkConvertManager::progress_updated,
-            this, [this](int finished, int total)
-            {
-                if (total > 0) {
-                    int percent = (finished * 100) / total;
-                    ui->av_progress->setValue(percent);
-                }
-            });
-    connect(bcm, &BulkConvertManager::finished,
-            this, [this]()
-            {
-                ui->av_progress->setValue(100);
-                ui->result_box->setReadOnly(false);
-                ui->result_box->setText("Video/Audio conversion finished.");
-                ui->result_box->setReadOnly(true);
-                QTimer::singleShot(5000, this, [this]() {
-                    ui->result_box->setReadOnly(false);
-                    ui->result_box->clear();
-                    ui->result_box->setReadOnly(true);
-                });
-                ui->select_file_av->setEnabled(true);
-                ui->convert_button_av->setEnabled(true);
-                ui->convert_button_av_save->setEnabled(true);
-                ui->pause_conversion->setEnabled(false);
-                ui->continue_conversion->setEnabled(false);
-                bcm->deleteLater();
-            });
+    og_file_paths = ui->drag_n_drop_area->get_files();
+    connect(bcm, &BulkConvertManager::progress_updated, this, [this](int finished, int total)
+    {
+        if (total > 0) {
+            int percent = (finished * 100) / total;
+            ui->av_progress->setValue(percent);
+        }
+    });
+    connect(bcm, &BulkConvertManager::job_status_updated, this, [this](int job_index, ConversionStatus status)
+    {
+        QString file_path = og_file_paths[job_index];
+        switch (status)
+        {
+        case ConversionStatus::Waiting:
+            file_path = file_path + QString::fromUtf8(" ⌛");
+            break;
+        case ConversionStatus::Converting:
+            file_path = file_path + QString::fromUtf8(" 🔄️");
+            break;
+        case ConversionStatus::Skipped:
+            file_path = file_path + QString::fromUtf8(" ⏭️️");
+            break;
+        case ConversionStatus::Failed:
+            file_path = file_path + QString::fromUtf8(" ❌");
+            break;
+        case ConversionStatus::Complete:
+            file_path = file_path + QString::fromUtf8(" ✅");
+            break;
+        }
+        ui->drag_n_drop_area->update_file_path(job_index, file_path);
+    });
+    connect(bcm, &BulkConvertManager::finished, this, [this]()
+    {
+        ui->av_progress->setValue(100);
+        ui->result_box->setReadOnly(false);
+        ui->result_box->setText("Video/Audio conversion finished.");
+        ui->result_box->setReadOnly(true);
+        QTimer::singleShot(5000, this, [this]() {
+            ui->result_box->setReadOnly(false);
+            ui->result_box->clear();
+            ui->result_box->setReadOnly(true);
+        });
+        ui->select_file_av->setEnabled(true);
+        ui->convert_button_av->setEnabled(true);
+        ui->convert_button_av_save->setEnabled(true);
+        ui->pause_conversion->setEnabled(false);
+        ui->continue_conversion->setEnabled(false);
+        if (bcm)
+        {
+            disconnect(bcm, nullptr, this, nullptr);
+            bcm->deleteLater();
+            bcm = nullptr;
+        }
+    });
     ui->pause_conversion->setEnabled(true);
     ui->continue_conversion->setEnabled(false);
     bcm->start();
@@ -380,6 +467,7 @@ void MainWindow::convert_user_document(QString save_folder)
 {
     if (bcm)
     {
+        disconnect(bcm, nullptr, this, nullptr);
         bcm->deleteLater();
         bcm = nullptr;
     }
@@ -406,7 +494,12 @@ void MainWindow::convert_user_document(QString save_folder)
                 ui->result_box->clear();
                 ui->result_box->setReadOnly(true);
             });
-            bcm->deleteLater();
+            if (bcm)
+            {
+                disconnect(bcm, nullptr, this, nullptr);
+                bcm->deleteLater();
+                bcm = nullptr;
+            }
             return;
         }
         bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_doc->currentText(), output_path);
@@ -415,33 +508,60 @@ void MainWindow::convert_user_document(QString save_folder)
     {
         bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_doc->currentText(), save_folder);
     }
-    connect(bcm, &BulkConvertManager::progress_updated,
-            this, [this](int finished, int total)
-            {
-                if (total > 0) {
-                    int percent = (finished * 100) / total;
-                    ui->doc_progress->setValue(percent);
-                }
-            });
-    connect(bcm, &BulkConvertManager::finished,
-            this, [this]()
-            {
-                ui->doc_progress->setValue(100);
-                ui->result_box->setReadOnly(false);
-                ui->result_box->setText("Document conversion finished.");
-                ui->result_box->setReadOnly(true);
-                QTimer::singleShot(5000, this, [this]() {
-                    ui->result_box->setReadOnly(false);
-                    ui->result_box->clear();
-                    ui->result_box->setReadOnly(true);
-                });
-                ui->select_file_doc->setEnabled(true);
-                ui->convert_button_doc->setEnabled(true);
-                ui->convert_button_doc_save->setEnabled(true);
-                ui->pause_conversion->setEnabled(false);
-                ui->continue_conversion->setEnabled(false);
-                bcm->deleteLater();
-            });
+    og_file_paths = ui->drag_n_drop_area->get_files();
+    connect(bcm, &BulkConvertManager::progress_updated, this, [this](int finished, int total)
+    {
+        if (total > 0) {
+            int percent = (finished * 100) / total;
+            ui->doc_progress->setValue(percent);
+        }
+    });
+    connect(bcm, &BulkConvertManager::job_status_updated, this, [this](int job_index, ConversionStatus status)
+    {
+        QString file_path = og_file_paths[job_index];
+        switch (status)
+        {
+        case ConversionStatus::Waiting:
+            file_path = file_path + QString::fromUtf8(" ⌛");
+            break;
+        case ConversionStatus::Converting:
+            file_path = file_path + QString::fromUtf8(" 🔄️");
+            break;
+        case ConversionStatus::Skipped:
+            file_path = file_path + QString::fromUtf8(" ⏭️️");
+            break;
+        case ConversionStatus::Failed:
+            file_path = file_path + QString::fromUtf8(" ❌");
+            break;
+        case ConversionStatus::Complete:
+            file_path = file_path + QString::fromUtf8(" ✅");
+            break;
+        }
+        ui->drag_n_drop_area->update_file_path(job_index, file_path);
+    });
+    connect(bcm, &BulkConvertManager::finished, this, [this]()
+    {
+        ui->doc_progress->setValue(100);
+        ui->result_box->setReadOnly(false);
+        ui->result_box->setText("Document conversion finished.");
+        ui->result_box->setReadOnly(true);
+        QTimer::singleShot(5000, this, [this]() {
+            ui->result_box->setReadOnly(false);
+            ui->result_box->clear();
+            ui->result_box->setReadOnly(true);
+        });
+        ui->select_file_doc->setEnabled(true);
+        ui->convert_button_doc->setEnabled(true);
+        ui->convert_button_doc_save->setEnabled(true);
+        ui->pause_conversion->setEnabled(false);
+        ui->continue_conversion->setEnabled(false);
+        if (bcm)
+        {
+            disconnect(bcm, nullptr, this, nullptr);
+            bcm->deleteLater();
+            bcm = nullptr;
+        }
+    });
     ui->pause_conversion->setEnabled(true);
     ui->continue_conversion->setEnabled(false);
     bcm->start();
@@ -493,9 +613,11 @@ void MainWindow::convert_user_spreadsheet(QString save_folder)
 {
     if (bcm)
     {
+        disconnect(bcm, nullptr, this, nullptr);
         bcm->deleteLater();
         bcm = nullptr;
     }
+    bcm = new BulkConvertManager(this);
     ui->spread_progress->setValue(0);
     ui->result_box->setReadOnly(false);
     ui->result_box->clear();
@@ -519,7 +641,12 @@ void MainWindow::convert_user_spreadsheet(QString save_folder)
                 ui->result_box->clear();
                 ui->result_box->setReadOnly(true);
             });
-            bcm->deleteLater();
+            if (bcm)
+            {
+                disconnect(bcm, nullptr, this, nullptr);
+                bcm->deleteLater();
+                bcm = nullptr;
+            }
             return;
         }
         bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_spread->currentText(), output_path);
@@ -528,33 +655,60 @@ void MainWindow::convert_user_spreadsheet(QString save_folder)
     {
         bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_spread->currentText(), save_folder);
     }
-    connect(bcm, &BulkConvertManager::progress_updated,
-            this, [this](int finished, int total)
-            {
-                if (total > 0) {
-                    int percent = (finished * 100) / total;
-                    ui->spread_progress->setValue(percent);
-                }
-            });
-    connect(bcm, &BulkConvertManager::finished,
-            this, [this]()
-            {
-                ui->spread_progress->setValue(100);
-                ui->result_box->setReadOnly(false);
-                ui->result_box->setText("Spreadsheet conversion finished.");
-                ui->result_box->setReadOnly(true);
-                QTimer::singleShot(5000, this, [this]() {
-                    ui->result_box->setReadOnly(false);
-                    ui->result_box->clear();
-                    ui->result_box->setReadOnly(true);
-                });
-                ui->select_file_ss->setEnabled(true);
-                ui->convert_button_spread->setEnabled(true);
-                ui->convert_button_spread_save->setEnabled(true);
-                ui->pause_conversion->setEnabled(false);
-                ui->continue_conversion->setEnabled(false);
-                bcm->deleteLater();
-            });
+    og_file_paths = ui->drag_n_drop_area->get_files();
+    connect(bcm, &BulkConvertManager::progress_updated, this, [this](int finished, int total)
+    {
+        if (total > 0) {
+            int percent = (finished * 100) / total;
+            ui->spread_progress->setValue(percent);
+        }
+    });
+    connect(bcm, &BulkConvertManager::job_status_updated, this, [this](int job_index, ConversionStatus status)
+    {
+        QString file_path = og_file_paths[job_index];
+        switch (status)
+        {
+        case ConversionStatus::Waiting:
+            file_path = file_path + QString::fromUtf8(" ⌛");
+            break;
+        case ConversionStatus::Converting:
+            file_path = file_path + QString::fromUtf8(" 🔄️");
+            break;
+        case ConversionStatus::Skipped:
+            file_path = file_path + QString::fromUtf8(" ⏭️️");
+            break;
+        case ConversionStatus::Failed:
+            file_path = file_path + QString::fromUtf8(" ❌");
+            break;
+        case ConversionStatus::Complete:
+            file_path = file_path + QString::fromUtf8(" ✅");
+            break;
+        }
+        ui->drag_n_drop_area->update_file_path(job_index, file_path);
+    });
+    connect(bcm, &BulkConvertManager::finished, this, [this]()
+    {
+        ui->spread_progress->setValue(100);
+        ui->result_box->setReadOnly(false);
+        ui->result_box->setText("Spreadsheet conversion finished.");
+        ui->result_box->setReadOnly(true);
+        QTimer::singleShot(5000, this, [this]() {
+            ui->result_box->setReadOnly(false);
+            ui->result_box->clear();
+            ui->result_box->setReadOnly(true);
+        });
+        ui->select_file_ss->setEnabled(true);
+        ui->convert_button_spread->setEnabled(true);
+        ui->convert_button_spread_save->setEnabled(true);
+        ui->pause_conversion->setEnabled(false);
+        ui->continue_conversion->setEnabled(false);
+        if (bcm)
+        {
+            disconnect(bcm, nullptr, this, nullptr);
+            bcm->deleteLater();
+            bcm = nullptr;
+        }
+    });
     ui->pause_conversion->setEnabled(true);
     ui->continue_conversion->setEnabled(false);
     bcm->start();
@@ -605,10 +759,11 @@ void MainWindow::convert_user_archive(QString save_folder)
 {
     if (bcm)
     {
+        disconnect(bcm, nullptr, this, nullptr);
         bcm->deleteLater();
         bcm = nullptr;
     }
-    ui->av_progress->setValue(0);
+    ui->archives_progress->setValue(0);
     ui->result_box->setReadOnly(false);
     ui->result_box->clear();
     ui->result_box->setReadOnly(true);
@@ -631,7 +786,12 @@ void MainWindow::convert_user_archive(QString save_folder)
                 ui->result_box->clear();
                 ui->result_box->setReadOnly(true);
             });
-            bcm->deleteLater();
+            if (bcm)
+            {
+                disconnect(bcm, nullptr, this, nullptr);
+                bcm->deleteLater();
+                bcm = nullptr;
+            }
             return;
         }
         bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_archive->currentText(), output_path);
@@ -640,38 +800,64 @@ void MainWindow::convert_user_archive(QString save_folder)
     {
         bcm->set_jobs(ui->drag_n_drop_area->get_files(), ui->output_type_archive->currentText(), save_folder);
     }
-    connect(bcm, &BulkConvertManager::progress_updated,
-            this, [this](int finished, int total)
-            {
-                if (total > 0) {
-                    int percent = (finished * 100) / total;
-                    ui->archives_progress->setValue(percent);
-                }
-            });
-    connect(bcm, &BulkConvertManager::finished,
-            this, [this]()
-            {
-                ui->archives_progress->setValue(100);
-                ui->result_box->setReadOnly(false);
-                ui->result_box->setText("Archive conversion finished.");
-                ui->result_box->setReadOnly(true);
-                QTimer::singleShot(5000, this, [this]() {
-                    ui->result_box->setReadOnly(false);
-                    ui->result_box->clear();
-                    ui->result_box->setReadOnly(true);
-                });
-                ui->select_file_ar->setEnabled(true);
-                ui->convert_button_archive->setEnabled(true);
-                ui->convert_button_archive_save->setEnabled(true);
-                ui->pause_conversion->setEnabled(false);
-                ui->continue_conversion->setEnabled(false);
-                bcm->deleteLater();
-            });
+    og_file_paths = ui->drag_n_drop_area->get_files();
+    connect(bcm, &BulkConvertManager::progress_updated, this, [this](int finished, int total)
+    {
+        if (total > 0) {
+            int percent = (finished * 100) / total;
+            ui->archives_progress->setValue(percent);
+        }
+    });
+    connect(bcm, &BulkConvertManager::job_status_updated, this, [this](int job_index, ConversionStatus status)
+    {
+        QString file_path = og_file_paths[job_index];
+        switch (status)
+        {
+        case ConversionStatus::Waiting:
+            file_path = file_path + QString::fromUtf8(" ⌛");
+            break;
+        case ConversionStatus::Converting:
+            file_path = file_path + QString::fromUtf8(" 🔄️");
+            break;
+        case ConversionStatus::Skipped:
+            file_path = file_path + QString::fromUtf8(" ⏭️️");
+            break;
+        case ConversionStatus::Failed:
+            file_path = file_path + QString::fromUtf8(" ❌");
+            break;
+        case ConversionStatus::Complete:
+            file_path = file_path + QString::fromUtf8(" ✅");
+            break;
+        }
+        ui->drag_n_drop_area->update_file_path(job_index, file_path);
+    });
+    connect(bcm, &BulkConvertManager::finished, this, [this]()
+    {
+        ui->archives_progress->setValue(100);
+        ui->result_box->setReadOnly(false);
+        ui->result_box->setText("Archive conversion finished.");
+        ui->result_box->setReadOnly(true);
+        QTimer::singleShot(5000, this, [this]() {
+            ui->result_box->setReadOnly(false);
+            ui->result_box->clear();
+            ui->result_box->setReadOnly(true);
+        });
+        ui->select_file_ar->setEnabled(true);
+        ui->convert_button_archive->setEnabled(true);
+        ui->convert_button_archive_save->setEnabled(true);
+        ui->pause_conversion->setEnabled(false);
+        ui->continue_conversion->setEnabled(false);
+        if (bcm)
+        {
+            disconnect(bcm, nullptr, this, nullptr);
+            bcm->deleteLater();
+            bcm = nullptr;
+        }
+    });
     ui->pause_conversion->setEnabled(true);
     ui->continue_conversion->setEnabled(false);
     bcm->start();
 }
-
 
 void MainWindow::on_convert_button_archive_clicked()
 {
@@ -715,19 +901,6 @@ void MainWindow::on_output_type_archive_currentTextChanged(const QString &arg1)
     }
 }
 
-void MainWindow::on_drag_n_drop_area_textChanged()
-{
-    ui->drag_n_drop_text->hide();
-}
-
-
-void MainWindow::on_clear_conversion_clicked()
-{
-    ui->drag_n_drop_area->clearFiles();
-    ui->drag_n_drop_text->show();
-}
-
-
 void MainWindow::on_select_file_images_clicked()
 {
     QString input_ext = ui->input_type_image->currentText();
@@ -735,7 +908,7 @@ void MainWindow::on_select_file_images_clicked()
     QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
     QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
     ui->drag_n_drop_area->clearFiles();
-    ui->drag_n_drop_area->setText(file_path);
+    ui->drag_n_drop_area->addItem(file_path);
     if (!file_path.isEmpty())
     {
         ui->drag_n_drop_area->clearFiles();
@@ -750,7 +923,7 @@ void MainWindow::on_select_file_av_clicked()
     QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
     QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
     ui->drag_n_drop_area->clearFiles();
-    ui->drag_n_drop_area->setText(file_path);
+    ui->drag_n_drop_area->addItem(file_path);
     if (!file_path.isEmpty())
     {
         ui->drag_n_drop_area->clearFiles();
@@ -766,7 +939,7 @@ void MainWindow::on_select_file_doc_clicked()
     QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
     QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
     ui->drag_n_drop_area->clearFiles();
-    ui->drag_n_drop_area->setText(file_path);
+    ui->drag_n_drop_area->addItem(file_path);
     if (!file_path.isEmpty())
     {
         ui->drag_n_drop_area->clearFiles();
@@ -782,7 +955,7 @@ void MainWindow::on_select_file_ss_clicked()
     QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
     QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
     ui->drag_n_drop_area->clearFiles();
-    ui->drag_n_drop_area->setText(file_path);
+    ui->drag_n_drop_area->addItem(file_path);
     if (!file_path.isEmpty())
     {
         ui->drag_n_drop_area->clearFiles();
@@ -798,7 +971,7 @@ void MainWindow::on_select_file_ar_clicked()
     QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
     QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
     ui->drag_n_drop_area->clearFiles();
-    ui->drag_n_drop_area->setText(file_path);
+    ui->drag_n_drop_area->addItem(file_path);
     if (!file_path.isEmpty())
     {
         ui->drag_n_drop_area->clearFiles();
@@ -830,3 +1003,47 @@ void MainWindow::on_continue_conversion_clicked()
     bcm->resume();
 }
 
+void MainWindow::on_clear_conversion_clicked()
+{
+    if (bcm)
+    {
+        disconnect(bcm, nullptr, this, nullptr);
+        bcm->deleteLater();
+        bcm = nullptr;
+    }
+    ui->drag_n_drop_area->clearFiles();
+    ui->drag_n_drop_text->show();
+    int file_type_index = ui->file_sections->currentIndex();
+    switch (file_type_index)
+    {
+        case 0:
+            ui->convert_button_image->setEnabled(true);
+            ui->convert_button_image_save->setEnabled(true);
+            ui->select_file_images->setEnabled(true);
+            break;
+        case 1:
+            ui->convert_button_av->setEnabled(true);
+            ui->convert_button_av_save->setEnabled(true);
+            ui->select_file_av->setEnabled(true);
+            break;
+        case 2:
+            ui->convert_button_doc->setEnabled(true);
+            ui->convert_button_doc_save->setEnabled(true);
+            ui->select_file_doc->setEnabled(true);
+            break;
+        case 3:
+            ui->convert_button_spread->setEnabled(true);
+            ui->convert_button_spread_save->setEnabled(true);
+            ui->select_file_ss->setEnabled(true);
+            break;
+        case 4:
+            ui->convert_button_archive->setEnabled(true);
+            ui->convert_button_archive_save->setEnabled(true);
+            ui->select_file_ar->setEnabled(true);
+            break;
+        default:
+            break;
+    }
+    ui->pause_conversion->setEnabled(false);
+    ui->continue_conversion->setEnabled(false);
+}

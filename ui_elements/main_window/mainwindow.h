@@ -89,8 +89,6 @@ private slots:
 
     void setup_progress_bars();
 
-    void on_drag_n_drop_area_textChanged();
-
     void on_clear_conversion_clicked();
 
     void on_select_file_images_clicked();
@@ -107,10 +105,14 @@ private slots:
 
     void on_continue_conversion_clicked();
 
+    void dnd_label_visibility();
+
 private:
     Ui::MainWindow *ui;
 
     BulkConvertManager *bcm = nullptr;
 
+    QVector<QString> og_file_paths;
+    \
 };
 #endif // MAINWINDOW_H
