@@ -26,10 +26,39 @@ QString file_ext(const QString &input_path)
     return info.suffix();
 }
 
+bool correct_ext(FileType file_type, QString ext)
+{
+    switch (file_type)
+    {
+        case FileType::Image:
+            return (ext == "png" || ext == "jpeg" || ext == "jpg" || ext == "ico" || ext == "jfif" || ext == "pbm" ||
+                    ext == "pgm" || ext == "ppm" || ext == "bmp" || ext == "cur" || ext == "xmb" || ext == "xpm");
+        case FileType::AV:
+            return (ext == "mp4" || ext == "mov" || ext == "avi" || ext == "wmv" || ext == "mkv" || ext == "mp3" ||
+                    ext == " wav" || ext == "aiff" || ext == "wma" || ext == "flac" || ext == "alac");
+        case FileType::Doc:
+            return (ext == "docx" || ext == "epub" || ext == "html" || ext == "json" || ext == "md" || ext == "latex" ||
+                    ext == "odt" || ext == "rtf" || ext == "rst" || ext == "org" || ext == "ipynb");
+        case FileType::SS:
+            return (ext == "xlsx" || ext == "xml" || ext == "csv" || ext == "ods" || ext == "fods");
+        case FileType::Archive:
+            return (ext == "zip" || ext == "7z" || ext == "tar" || ext == "tar.gz" || ext == "tar.bz2" || ext == "tar.xz" ||
+                    ext == "tar.zst" || ext == "xar" || ext == "xar.gz" || ext == "xar.bz2" || ext == "xar.xz" ||
+                    ext == "iso" || ext == "cpio" || ext == "ar");
+        default:
+            return false;
+    }
+}
+
 void BulkConvertManager::start()
 {
     paused = false;
     cancelled = false;
+    int job_size = jobs.size();
+    for (int i = 0; i < job_size; ++i)
+    {
+        emit job_status_updated(i, ConversionStatus::Waiting);
+    }
     process_next();
 }
 
@@ -57,39 +86,80 @@ void BulkConvertManager::set_file_type(FileType ft)
     file_type = ft;
 }
 
-void BulkConvertManager::set_jobs(QSet<QString> input_files, QString output_ext, const QString output_path)
+void BulkConvertManager::set_jobs(QVector<QString> input_files, QString output_ext, const QString output_path)
 {
     for (const QString &path : input_files)
     {
         ConversionJob job;
         QFileInfo input_info(path);
         job.input_path = path;
-        job.output_ext = output_ext;
+        job.output_ext = output_ext.toLower();
         job.output_path = output_path;
         job.status = ConversionStatus::Waiting;
         jobs.append(job);
     }
+    job_count = jobs.size();
+}
+
+bool BulkConvertManager::total_success()
+{
+    if (succeeded == job_count)
+    {
+        return true;
+    }
+    return false;
+}
+
+void BulkConvertManager::start_image_job(ConversionJob &job, int job_index)
+{
+    auto *converter = new MainImageConverter(this);
+    connect(converter, &MainImageConverter::update_image_progress, this, [this, job_index] (const QString &error, bool success)
+    {
+        ConversionJob &job = jobs[job_index];
+        if (success)
+        {
+            job.status = ConversionStatus::Complete;
+            emit job_status_updated(job_index, ConversionStatus::Complete);
+            succeeded++;
+        }
+        else
+        {
+            job.status = ConversionStatus::Failed;
+            emit job_status_updated(job_index, ConversionStatus::Failed);
+            job.error_message = error.isEmpty() ? "Conversion failed" : error;
+            qDebug() << job.error_message;
+        }
+        emit job_updated(job_index);
+        current_index++;
+        emit progress_updated(current_index, job_count);
+        sender()->deleteLater();
+        process_next();
+    });
+    converter->convert_image(job.input_path, job.output_path, file_ext(job.input_path), job.output_ext);
 }
 
 void BulkConvertManager::start_av_job(ConversionJob &job, int job_index)
 {
     auto *converter = new MainVideoConverter(this);
-    connect(converter, &MainVideoConverter::update_result_message, this, [=, &job]
-        (bool success, const QString &error)
+    connect(converter, &MainVideoConverter::update_av_progress, this, [this, job_index] (const QString &error, bool success)
     {
+        ConversionJob &job = jobs[job_index];
         if (success)
         {
             job.status = ConversionStatus::Complete;
+            emit job_status_updated(job_index, ConversionStatus::Complete);
+            succeeded++;
         }
         else
         {
             job.status = ConversionStatus::Failed;
+            emit job_status_updated(job_index, ConversionStatus::Failed);
             job.error_message = error.isEmpty() ? "Conversion failed" : error;
         }
         emit job_updated(job_index);
         current_index++;
-        emit progress_updated(current_index, jobs.size());
-        converter->deleteLater();
+        emit progress_updated(current_index, job_count);
+        sender()->deleteLater();
         process_next();
     });
     converter->convert_video(job.input_path, job.output_path, file_ext(job.input_path), job.output_ext);
@@ -98,25 +168,91 @@ void BulkConvertManager::start_av_job(ConversionJob &job, int job_index)
 void BulkConvertManager::start_doc_job(ConversionJob &job, int job_index)
 {
     auto *converter = new MainDocumentConverter(this);
-    connect(converter, &MainDocumentConverter::update_result_message, this, [=, &job]
-        (bool success, const QString &error)
+    connect(converter, &MainDocumentConverter::update_doc_progress, this, [this, job_index] (const QString &error, bool success)
     {
+        ConversionJob &job = jobs[job_index];
         if (success)
         {
             job.status = ConversionStatus::Complete;
+            emit job_status_updated(job_index, ConversionStatus::Complete);
+            succeeded++;
         }
         else
         {
             job.status = ConversionStatus::Failed;
+            emit job_status_updated(job_index, ConversionStatus::Failed);
             job.error_message = error.isEmpty() ? "Conversion failed" : error;
         }
         emit job_updated(job_index);
         current_index++;
-        emit progress_updated(current_index, jobs.size());
-        converter->deleteLater();
+        emit progress_updated(current_index, job_count);
+        sender()->deleteLater();
         process_next();
     });
     converter->convert_document(job.input_path, job.output_path, file_ext(job.input_path), job.output_ext);
+}
+
+void BulkConvertManager::start_ss_job(ConversionJob &job, int job_index)
+{
+    auto *converter = new MainSpreadConverter(this);
+    connect(converter, &MainSpreadConverter::update_ss_progress, this, [this, job_index] (const QString &error, bool success)
+    {
+        ConversionJob &job = jobs[job_index];
+        if (success)
+        {
+            job.status = ConversionStatus::Complete;
+            emit job_status_updated(job_index, ConversionStatus::Complete);
+            succeeded++;
+        }
+        else
+        {
+            job.status = ConversionStatus::Failed;
+            emit job_status_updated(job_index, ConversionStatus::Failed);
+            job.error_message = error.isEmpty() ? "Conversion failed" : error;
+        }
+        emit job_updated(job_index);
+        current_index++;
+        emit progress_updated(current_index, job_count);
+        sender()->deleteLater();
+        process_next();
+    });
+    converter->convert_spread(job.input_path, job.output_path, file_ext(job.input_path), job.output_ext);
+}
+
+void BulkConvertManager::start_archive_job(ConversionJob &job, int job_index)
+{
+    auto *converter = new MainArchiveConverter(this);
+    connect(converter, &MainArchiveConverter::update_archive_progress, this, [this, job_index] (const QString &error, bool success)
+    {
+        ConversionJob &job = jobs[job_index];
+        if (success)
+        {
+            job.status = ConversionStatus::Complete;
+            emit job_status_updated(job_index, ConversionStatus::Complete);
+            succeeded++;
+        }
+        else
+        {
+            job.status = ConversionStatus::Failed;
+            emit job_status_updated(job_index, ConversionStatus::Failed);
+            job.error_message = error.isEmpty() ? "Conversion failed" : error;
+        }
+        emit job_updated(job_index);
+        current_index++;
+        emit progress_updated(current_index, job_count);
+        sender()->deleteLater();
+        process_next();
+    });
+    converter->convert_archive(job.input_path, job.output_path, file_ext(job.input_path), job.output_ext);
+}
+
+void BulkConvertManager::skip_job(int job_index, ConversionStatus status)
+{
+    emit job_status_updated(current_index, ConversionStatus::Skipped);
+    emit job_updated(current_index);
+    current_index++;
+    emit progress_updated(current_index, job_count);
+    process_next();
 }
 
 void BulkConvertManager::process_next()
@@ -125,58 +261,70 @@ void BulkConvertManager::process_next()
     {
         return;
     }
-    if (current_index >= jobs.size())
+    if (current_index >= job_count)
     {
         emit finished();
         return;
     }
     auto &job = jobs[current_index];
-    if (job.status == ConversionStatus::Skipped)
-    {
-        current_index++;
-        process_next();
-        return;
-    }
     job.status = ConversionStatus::Converting;
-    bool success = false;
-    QString result_message;
+    emit job_status_updated(current_index, ConversionStatus::Converting);
     switch (file_type)
     {
         case FileType::Image:
-            result_message = convert_image_file(job.input_path, file_ext(job.input_path), job.output_ext, job.output_path);
+        if (correct_ext(file_type, file_ext(job.input_path)) && correct_ext(file_type, job.output_ext))
+        {
+            start_image_job(job, current_index);
+        }
+        else
+        {
+            job.status = ConversionStatus::Skipped;
+            skip_job(current_index, ConversionStatus::Skipped);
+        }
             break;
         case FileType::AV:
-            start_av_job(job, current_index);
-            return;
+            if (correct_ext(file_type, file_ext(job.input_path)) && correct_ext(file_type, job.output_ext))
+            {
+                start_av_job(job, current_index);
+            }
+            else
+            {
+                job.status = ConversionStatus::Skipped;
+                skip_job(current_index, ConversionStatus::Skipped);
+            }
+            break;
         case FileType::Doc:
-            start_doc_job(job, current_index);
+            if (correct_ext(file_type, file_ext(job.input_path)) && correct_ext(file_type, job.output_ext))
+            {
+                start_doc_job(job, current_index);
+            }
+            else
+            {
+                job.status = ConversionStatus::Skipped;
+                skip_job(current_index, ConversionStatus::Skipped);
+            }
             break;
         case FileType::SS:
-            result_message = convert_spread_file(job.input_path, file_ext(job.input_path), job.output_ext, job.output_path);
+            if (correct_ext(file_type, file_ext(job.input_path)) && correct_ext(file_type, job.output_ext))
+            {
+                start_ss_job(job, current_index);
+            }
+            else
+            {
+                job.status = ConversionStatus::Skipped;
+                skip_job(current_index, ConversionStatus::Skipped);
+            }
             break;
         case FileType::Archive:
-            result_message = convert_archive_file(job.input_path, file_ext(job.input_path), job.output_ext, job.output_path);
+            if (correct_ext(file_type, file_ext(job.input_path)) && correct_ext(file_type, job.output_ext))
+            {
+                start_archive_job(job, current_index);
+            }
+            else
+            {
+                job.status = ConversionStatus::Skipped;
+                skip_job(current_index, ConversionStatus::Skipped);
+            }
             break;
     }
-    if (result_message.left(1) != "S")
-    {
-        job.error_message = result_message;
-    }
-    else
-    {
-        success = true;
-    }
-    if (success)
-    {
-        job.status = ConversionStatus::Complete;
-    }
-    else
-    {
-        job.status = ConversionStatus::Failed;
-        job.error_message = "Conversion failed";
-    }
-    emit job_updated(current_index);
-    current_index++;
-    emit progress_updated(current_index, jobs.size());
-    process_next();
 }
