@@ -12,6 +12,8 @@
 #include <fstream>
 #include "json.hpp"
 #include <algorithm>
+#include <QtConcurrent/QtConcurrent>
+#include <QTemporaryFile>
 
 using json = nlohmann::json;
 using namespace std;
@@ -21,7 +23,6 @@ MainSpreadConverter::MainSpreadConverter(QObject *parent)
 {}
 
 // Uses in order to check if the files that are going to be converted need the python program to convert it
-
 bool check_python_need(QString ext_1, QString ext_2)
 {
     if (ext_1 == "xlsx" || ext_2 == "xlsx" || ext_1 == "ods" || ext_2 == "ods")
@@ -54,9 +55,9 @@ QChar detect_delim(const QString &path)
     return best_choice;
 }
 
-bool MainSpreadConverter::csv_to_fods(const QString &csv_file, const QString &fods_file, bool &success, json pref_file)
+void MainSpreadConverter::csv_to_fods(const QString &csv_file, const QString &fods_file, json pref_file)
 {
-    success = false;
+    bool success = false;
     bool rm_empty_rc = false;
     if (pref_file != nullptr)
     {
@@ -68,7 +69,8 @@ bool MainSpreadConverter::csv_to_fods(const QString &csv_file, const QString &fo
     QFile csv(csv_file);
     if (!csv.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        return false;
+        emit update_ss_progress("Failed to open CSV file", false);
+        return;
     }
     QTextStream in(&csv);
     QChar detected_delim = detect_delim(csv_file);
@@ -134,7 +136,8 @@ bool MainSpreadConverter::csv_to_fods(const QString &csv_file, const QString &fo
     if (!output_file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
         csv.close();
-        return false;
+        emit update_ss_progress("Failed to open FODS file", false);
+        return;
     }
     QXmlStreamWriter w(&output_file);
     w.setAutoFormatting(true);
@@ -151,7 +154,17 @@ bool MainSpreadConverter::csv_to_fods(const QString &csv_file, const QString &fo
     w.writeAttribute("table:name", "Sheet1");
     if (w.hasError())
     {
-        return false;
+        QString errorMsg = "Failed to write XML";
+        if (w.device())
+        {
+            QString deviceError = w.device()->errorString();
+            if (!deviceError.isEmpty())
+            {
+                errorMsg += ": " + deviceError;
+            }
+        }
+        emit update_ss_progress(errorMsg, false);
+        return;
     }
     for (const auto &row : table)
     {
@@ -175,15 +188,27 @@ bool MainSpreadConverter::csv_to_fods(const QString &csv_file, const QString &fo
     output_file.close();
     if (w.hasError())
     {
-        return false;
+        QString errorMsg = "Failed to write XML";
+        if (w.device())
+        {
+            QString deviceError = w.device()->errorString();
+            if (!deviceError.isEmpty())
+            {
+                errorMsg += ": " + deviceError;
+            }
+        }
+        emit update_ss_progress(errorMsg, false);
+        return;
     }
-    success = true;
-    return true;
+    QFileInfo input_file_info(csv_file);
+    QString output_name = input_file_info.completeBaseName() + ".fods";
+    QString result = QString("Success: %1.%2 has been converted to %3")
+        .arg(input_file_info.completeBaseName(), "csv", output_name);
+    emit update_ss_progress(result, true);
 }
 
-bool MainSpreadConverter::csv_to_xml(const QString &csv_file, const QString &xml_file, bool &success, json pref_file)
+void MainSpreadConverter::csv_to_xml(const QString &csv_file, const QString &xml_file, json pref_file)
 {
-    success = false;
     bool pretty_print = false;
     if (pref_file != nullptr)
     {
@@ -195,13 +220,15 @@ bool MainSpreadConverter::csv_to_xml(const QString &csv_file, const QString &xml
     QFile csv(csv_file);
     if (!csv.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        return false;
+        emit update_ss_progress("Failed to open CSV file", false);
+        return;
     }
     QFile output_file(xml_file);
     if (!output_file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
         csv.close();
-        return false;
+        emit update_ss_progress("Failed to create XML file", false);
+        return;
     }
     QChar detected_delim = detect_delim(csv_file);
     QXmlStreamWriter writer(&output_file);
@@ -218,7 +245,7 @@ bool MainSpreadConverter::csv_to_xml(const QString &csv_file, const QString &xml
         QString line = stream.readLine();
         QStringList cells = line.split(detected_delim);
         writer.writeStartElement("row");
-        for (const QString &cell : cells)
+        foreach (const QString &cell, cells)
         {
             writer.writeTextElement("cell", cell.trimmed());
         }
@@ -228,13 +255,16 @@ bool MainSpreadConverter::csv_to_xml(const QString &csv_file, const QString &xml
     writer.writeEndDocument();
     csv.close();
     output_file.close();
-    success = true;
-    return true;
+    QFileInfo input_file_info(csv_file);
+    QString output_name = input_file_info.completeBaseName() + ".xml";
+    QString result = QString("Success: %1.%2 has been converted to %3")
+        .arg(input_file_info.completeBaseName(), "csv", output_name);
+    emit update_ss_progress(result, true);
 }
 
-bool MainSpreadConverter::xml_to_csv(const QString &xml_file, const QString &csv_file, bool &success, json pref_file)
+void MainSpreadConverter::xml_to_csv(const QString &xml_file, const QString &csv_file, json pref_file)
 {
-    success = false;
+    bool success = false;
     QChar delim_choice = ',';
     if (pref_file != nullptr)
     {
@@ -249,16 +279,16 @@ bool MainSpreadConverter::xml_to_csv(const QString &xml_file, const QString &csv
     QFile file(xml_file);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        qDebug() << "Failed to open XML file:" << xml_file;
-        return false;
+        emit update_ss_progress("Failed to open XML file", false);
+        return;
     }
     QByteArray xml_content = file.readAll();
     file.close();
     QFile output_file(csv_file);
     if (!output_file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
-        qDebug() << "Failed to create CSV file:" << csv_file;
-        return false;
+        emit update_ss_progress("Failed to create CSV file", false);
+        return;
     }
     QXmlStreamReader reader(xml_content);
     QTextStream out(&output_file);
@@ -284,13 +314,13 @@ bool MainSpreadConverter::xml_to_csv(const QString &xml_file, const QString &csv
                 QString elem_name = r.name().toString();
                 QString new_key = parent_key.isEmpty() ? elem_name : parent_key + "_" + elem_name;
                 QXmlStreamAttributes attrs = r.attributes();
-                for (const auto &attr : attrs)
+                foreach (const auto &attr, attrs)
                 {
                     QString attr_key = new_key + "@" + attr.name().toString();
                     result[attr_key] = attr.value().toString();
                 }
                 QString text = r.readElementText(QXmlStreamReader::IncludeChildElements).trimmed();
-                QXmlStreamReader temp_reader(QString("<%1>%2</%1>").arg(elem_name).arg(text));
+                QXmlStreamReader temp_reader(QString("<%1>%2</%1>").arg(elem_name, text));
                 temp_reader.readNext();
                 temp_reader.readNext();
                 QString content = temp_reader.readElementText();
@@ -301,7 +331,7 @@ bool MainSpreadConverter::xml_to_csv(const QString &xml_file, const QString &csv
                 }
                 else
                 {
-                    QXmlStreamReader nested_reader(QString("<%1>%2</%1>").arg(elem_name).arg(text));
+                    QXmlStreamReader nested_reader(QString("<%1>%2</%1>").arg(elem_name, text));
                     nested_reader.readNext();
                     nested_reader.readNext();
                     auto nested_result = flatten_element(nested_reader, new_key, depth + 1);
@@ -386,9 +416,10 @@ bool MainSpreadConverter::xml_to_csv(const QString &xml_file, const QString &csv
         reader.readNext();
         if (reader.hasError())
         {
-            qDebug() << "XML Parse Error:" << reader.errorString();
+            QString result = "XML Parse Error: " + reader.errorString();
             output_file.close();
-            return false;
+            emit update_ss_progress(result, false);
+            return;
         }
         if (reader.isStartElement() && reader.name().toString() == row_element)
         {
@@ -419,32 +450,39 @@ bool MainSpreadConverter::xml_to_csv(const QString &xml_file, const QString &csv
     }
     output_file.close();
     success = (all_rows.size() > 0);
-    return success;
+    if (success)
+    {
+        QFileInfo input_file_info(xml_file);
+        QString result = "Success: " + input_file_info.completeBaseName() + ".xml" +
+                " has been converted to " + input_file_info.completeBaseName() + ".csv";
+        emit update_ss_progress(result, true);
+    }
+    else
+    {
+        emit update_ss_progress("XML file could not be converted", false);
+    }
 }
 
-
-bool MainSpreadConverter::xml_to_fods(const QString &xml_file, const QString &fods_file, bool &success, json pref_file)
+void MainSpreadConverter::xml_to_fods(const QString &xml_file, const QString &fods_file, json pref_file)
 {
-    QString temp_csv = QDir::temp().filePath("tmp.csv");
-    bool xml_success = false;
-    if (!xml_to_csv(xml_file, temp_csv, xml_success, nullptr))
-    {
-        success = false;
-        return false;
-    }
-    bool fods_success = true;
-    if (!csv_to_fods(temp_csv, fods_file, fods_success, pref_file))
-    {
+    QThreadPool::globalInstance()->start([=]() {
+        QString temp_csv = QDir::temp().filePath(
+            QUuid::createUuid().toString() + ".csv"
+            );
+
+        xml_to_csv(xml_file, temp_csv, pref_file);
+
+        if (!QFileInfo::exists(temp_csv)) {
+            emit update_ss_progress("CSV generation failed", false);
+            return;
+        }
+
+        csv_to_fods(temp_csv, fods_file, pref_file);
         QFile::remove(temp_csv);
-        success = false;
-        return false;
-    }
-    QFile::remove(temp_csv);
-    success = true;
-    return true;
+    });
 }
 
-bool find_matching_function(const QString &input_file, const QString &output_file, QString input_extension, QString output_extension, bool &success)
+void MainSpreadConverter::find_matching_function(const QString &input_file, const QString &output_file, QString input_extension, QString output_extension)
 {
     QString source_location = QString(__FILE__);
     QFileInfo file_info(source_location);
@@ -457,12 +495,12 @@ bool find_matching_function(const QString &input_file, const QString &output_fil
         save_json >> load_data;
         save_json.close();
     }
-    if (input_extension == "csv" && output_extension == "fods") {return csv_to_fods(input_file, output_file, success, load_data);}
-    else if (input_extension == "xml" && output_extension == "fods") {return xml_to_fods(input_file, output_file, success, load_data);}
-    else if (input_extension == "csv" && output_extension == "xml") {return csv_to_xml(input_file, output_file, success, load_data);}
-    else if (input_extension == "xml" && output_extension == "csv") {return xml_to_csv(input_file, output_file, success, load_data);}
-    success = false;
-    return false;
+    if (input_extension == "csv" && output_extension == "fods") {csv_to_fods(input_file, output_file, load_data);}
+    else if (input_extension == "xml" && output_extension == "fods") {xml_to_fods(input_file, output_file, load_data);}
+    else if (input_extension == "csv" && output_extension == "xml") {csv_to_xml(input_file, output_file, load_data);}
+    else if (input_extension == "xml" && output_extension == "csv") {xml_to_csv(input_file, output_file, load_data);}
+    else if (input_extension == "xlsx" || output_extension == "xlsx" || input_extension == "ods" || output_extension == "ods")
+    {convert_xlsx_or_ods(input_file, output_file, input_extension, output_extension);}
 }
 
 void MainSpreadConverter::convert_xlsx_or_ods(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
@@ -486,23 +524,21 @@ void MainSpreadConverter::convert_xlsx_or_ods(const QString &input_path, const Q
     {
         arguments << json_path;
     }
-    connect(python_process, &QProcess::readyReadStandardOutput, [this]() {
-        QByteArray output = python_process->readAllStandardOutput();
-        qDebug() << "Python Output: " << output;
-    });
-    connect(python_process, &QProcess::readyReadStandardError, [this]() {
-        QByteArray error = python_process->readAllStandardError();
-        qDebug() << "Python Error: " << error;
-    });
-    connect(python_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this, input_path, output_path, input_extension, output_extension](int exitCode, QProcess::ExitStatus status) {
-        if (status != QProcess::NormalExit || exitCode != 0) {
-            QString message = (input_path.isEmpty()) ? "No location selected" : "File could not be converted.";
-            emit update_ss_progress(0);
-        } else {
+    connect(python_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this, input_path, output_path, input_extension, output_extension]
+        (int exitCode, QProcess::ExitStatus status)
+    {
+        QString result;
+        if (status != QProcess::NormalExit || exitCode != 0)
+        {
+            result = QString::fromUtf8(python_process->readAllStandardError());
+            emit update_ss_progress(result, false);
+        }
+        else
+        {
             QFileInfo input_file_info(input_path);
-            QString result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() +
+            result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() +
                             " has been converted to " + input_file_info.completeBaseName() + '.' + output_extension.toLower();
-            emit update_ss_progress(100);
+            emit update_ss_progress(result, true);
         }
     });
     python_process->start(python_path, arguments);
@@ -524,23 +560,21 @@ void MainSpreadConverter::convert_fods_to_csv_or_xml(QString &input_path, QStrin
     {
         arguments << json_path;
     }
-    connect(python_process, &QProcess::readyReadStandardOutput, [this]() {
-        QByteArray output = python_process->readAllStandardOutput();
-        qDebug() << "Python Output: " << output;
-    });
-    connect(python_process, &QProcess::readyReadStandardError, [this]() {
-        QByteArray error = python_process->readAllStandardError();
-        qDebug() << "Python Error: " << error;
-    });
-    connect(python_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this, input_path, output_path, input_extension, output_extension](int exitCode, QProcess::ExitStatus status) {
-        if (status != QProcess::NormalExit || exitCode != 0) {
-            QString message = (input_path.isEmpty()) ? "No location selected" : "File could not be converted.";
-            emit update_ss_progress(0);
-        } else {
+    connect(python_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this, input_path, output_path, input_extension, output_extension]
+        (int exitCode, QProcess::ExitStatus status)
+    {
+        QString result;
+        if (status != QProcess::NormalExit || exitCode != 0)
+        {
+            result = QString::fromUtf8(python_process->readAllStandardError());
+            emit update_ss_progress(result, false);
+        }
+        else
+        {
             QFileInfo input_file_info(input_path);
-            QString result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() +
+            result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() +
                             " has been converted to " + input_file_info.completeBaseName() + '.' + output_extension.toLower();
-            emit update_ss_progress(100);
+            emit update_ss_progress(result, true);
         }
     });
     python_process->setArguments(arguments);
@@ -549,55 +583,8 @@ void MainSpreadConverter::convert_fods_to_csv_or_xml(QString &input_path, QStrin
 
 void MainSpreadConverter::convert_spread(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
 {
-    bool success = false;
-    bool conversion_result = find_matching_function(input_path, output_path, input_extension, output_extension, success);
-    if (conversion_result && success)
-    {
-        QFileInfo input_file_info(input_path);
-        QString result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() + " has been converted to " + input_file_info.completeBaseName() + '.' + output_extension.toLower();
-        emit update_ss_progress(100);
-    }
-    else
-    {
-        emit update_ss_progress(0);
-    }
-}
-
-void MainSpreadConverter::convert_spread_file(QString file_path, QString input_extension, QString output_extension, QString save_folder)
-{
-    QFileInfo input_file_info(file_path);
-    QString output_name = input_file_info.completeBaseName() + '.' + output_extension.toLower();
-    QDir output_dir(save_folder);
-    QString output_path = output_dir.filePath(output_name);
-    auto *converter = new MainSpreadConverter(this);
-    connect(converter, &MainSpreadConverter::update_result_message, this, [=](bool success, const QString &error)
-    {
-        QString result_message;
-        if (success)
-        {
-            result_message = QString("Success: %1.%2 has been converted to %3")
-            .arg(input_file_info.completeBaseName()).arg(input_extension.toLower()).arg(output_name);
-        }
-        else
-        {
-            result_message = error.isEmpty() ? "File could not be converted" : error;
-        }
-        emit update_result_message(result_message, success);
-        converter->deleteLater();
-    });
-    if (check_python_need(input_extension.toLower(), output_extension.toLower()))
-    {
-        converter->convert_xlsx_or_ods(file_path, output_path, input_extension.toLower(), output_extension.toLower());
-    }
-    else
-    {
-        if ((input_extension == "FODS" && output_extension == "CSV") || (input_extension == "FODS" && output_extension == "XML"))
-        {
-            converter->convert_fods_to_csv_or_xml(file_path, output_path, input_extension.toLower(), output_extension.toLower());
-        }
-        else
-        {
-            converter->convert_spread(file_path, output_path, input_extension.toLower(), output_extension.toLower());
-        }
-    }
+    QFileInfo input_file_info(input_path);
+    QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
+    QString complete_output = QDir(output_path).filePath(output_name);
+    find_matching_function(input_path, complete_output, input_extension, output_extension);
 }
