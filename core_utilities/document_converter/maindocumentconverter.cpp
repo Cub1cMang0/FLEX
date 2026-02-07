@@ -61,9 +61,50 @@ bool format_json(const QString &input_path, const QString &output_path)
 
 void MainDocumentConverter::convert_document(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
 {
+    QFileInfo input_file_info(input_path);
+    QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
+    QString complete_output = QDir(output_path).filePath(output_name);
     const auto &settings = document_capabilities[output_extension.toLower()];
+    QString actual_input_path = input_path;
+    QString temp_markdown_path;
+    bool created_temp_markdown = false;
+    if (input_extension.toUpper() == "JSON")
+    {
+        ifstream json_file(input_path.toStdString());
+        if (!json_file.is_open())
+        {
+            emit update_doc_progress("Failed to open JSON file", false);
+            return;
+        }
+        json j;
+        try
+        {
+            json_file >> j;
+            json_file.close();
+        }
+        catch (const json::exception &e)
+        {
+            json_file.close();
+            emit update_doc_progress(QString("Failed to parse JSON: %1").arg(e.what()), false);
+            return;
+        }
+        string markdown = json_markdown_wrap(j);
+        temp_markdown_path = input_path.left(input_path.length() - 4) + "md";
+        try
+        {
+            save_new_json(temp_markdown_path.toStdString(), markdown);
+            format_json(input_path, temp_markdown_path);
+        }
+        catch (...)
+        {
+            emit update_doc_progress("Failed to create temporary markdown file from JSON", false);
+            return;
+        }
+        actual_input_path = temp_markdown_path;
+        created_temp_markdown = true;
+    }
     QStringList arguments;
-    arguments << input_path << "-o" << output_path;
+    arguments << actual_input_path << "-o" << complete_output;
     QString temp_ref_path;
     pandoc = new QProcess(this);
     pandoc->setProgram("pandoc");
@@ -86,10 +127,22 @@ void MainDocumentConverter::convert_document(const QString &input_path, const QS
         int pres_media = document_preferences["pres_media"];
         int line_break = document_preferences["line_break"];
         int standalone = document_preferences["standalone"];
-        if (rem_metadata == 2 && settings.remove_meta_support) {arguments << "--metadata=title=" << "--metadata=author=" << "--metadata=date=";}
-        if (pres_media == 2 && settings.preserve_media_support) {arguments << "--extract-media=media";}
-        if (line_break == 2 && settings.line_break_support) {arguments << "--wrap=preserve";}
-        if (standalone == 2 && settings.standalone_support) {arguments << "--standalone";}
+        if (rem_metadata == 2 && settings.remove_meta_support)
+        {
+            arguments << "--metadata=title=" << "--metadata=author=" << "--metadata=date=";
+        }
+        if (pres_media == 2 && settings.preserve_media_support)
+        {
+            arguments << "--extract-media=media";
+        }
+        if (line_break == 2 && settings.line_break_support)
+        {
+            arguments << "--wrap=preserve";
+        }
+        if (standalone == 2 && settings.standalone_support)
+        {
+            arguments << "--standalone";
+        }
         if (pres_formatting == 2 && settings.preserve_format_support)
         {
             QString base_name = "reference." + (output_extension == "PDF" ? "tex" : output_extension.toLower());
@@ -108,7 +161,8 @@ void MainDocumentConverter::convert_document(const QString &input_path, const QS
                 ref_proc.start("pandoc", {"--print-default-data-file", "reference." + output_extension.toLower()});
                 ref_proc.waitForFinished();
                 QByteArray ref_data = ref_proc.readAllStandardOutput();
-                if (temp_ref_file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                if (temp_ref_file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+                {
                     temp_ref_file.write(ref_data);
                     temp_ref_file.close();
                 }
@@ -133,67 +187,40 @@ void MainDocumentConverter::convert_document(const QString &input_path, const QS
     connect(pandoc, &QProcess::errorOccurred, this, [=](QProcess::ProcessError error)
     {
         Q_UNUSED(error);
-        emit update_doc_progress(0);
+        QString result = QString::fromUtf8(pandoc->readAllStandardError());
+        if (!temp_ref_path.isEmpty())
+        {
+            QFile::remove(temp_ref_path);
+        }
+        if (created_temp_markdown)
+        {
+            QFile::remove(temp_markdown_path);
+        }
+        emit update_doc_progress(result, false);
     });
     connect(pandoc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, [=](int exitCode, QProcess::ExitStatus status)
     {
-        if (!temp_ref_path.isEmpty()) {
+        QString result;
+        if (!temp_ref_path.isEmpty())
+        {
             QFile::remove(temp_ref_path);
+        }
+        if (created_temp_markdown)
+        {
+            QFile::remove(temp_markdown_path);
         }
         if (status != QProcess::NormalExit || exitCode != 0)
         {
-            if (input_path != "") {emit update_doc_progress(0);}
-            else {emit update_doc_progress(0);}
+            result = QString::fromUtf8(pandoc->readAllStandardError());
+            emit update_doc_progress(result, false);
         }
         else
         {
-            emit {emit update_doc_progress(100);}
+            result = QString("Success: %1.%2 has been converted to %3").arg(input_file_info.completeBaseName(),
+                input_extension.toLower(), output_name);
+            emit update_doc_progress(result, true);
         }
     });
     pandoc->setArguments(arguments);
     pandoc->start();
-
-}
-
-void MainDocumentConverter::convert_document_file(QString file_path, QString input_extension, QString output_extension, QString save_folder)
-{
-    if (file_path.isEmpty())
-    {
-        emit update_result_message("No document file selected", false);
-        return;
-    }
-    bool is_json = false;
-    QFileInfo input_file_info(file_path);
-    QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
-    QDir output_dir(save_folder);
-    QString output_path = output_dir.filePath(output_name);
-    if (input_extension == "JSON")
-    {
-        ifstream json_file((file_path).toStdString());
-        json j;
-        json_file >> j;
-        string markdown = json_markdown_wrap(j);
-        QString markdown_file = file_path.left(file_path.length() - 4) + "md";
-        save_new_json(markdown_file.toStdString(), markdown);
-        format_json(file_path, markdown_file);
-        file_path = markdown_file;
-        is_json = true;
-    }
-    auto *converter = new MainDocumentConverter(this);
-    connect(converter, &MainDocumentConverter::update_result_message, this, [=](bool success, const QString &error)
-    {
-        QString result_message;
-        if (success)
-        {
-            result_message = QString("Success: %1.%2 has been converted to %3")
-            .arg(input_file_info.completeBaseName()).arg(input_extension.toLower()).arg(output_name);
-        }
-        else
-        {
-            result_message = error.isEmpty() ? "File could not be converted" : error;
-        }
-        emit update_result_message(result_message, success);
-        converter->deleteLater();
-    });
-    converter->convert_document(file_path, output_path, input_extension, output_extension);
 }
