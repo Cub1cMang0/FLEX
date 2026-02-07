@@ -149,7 +149,6 @@ QString sanitizeArName(const QString &input, QSet<QString> &used, bool is_gnu_fo
     return fallback;
 }
 
-
 QString sanitizeIsoPath(const QString &path, QHash<QString, QSet<QString>> &dirTables, QHash<QString, QString> &dirPathMap, bool isDirectory, const json &data) {
     QStringList parts = path.split('/', Qt::SkipEmptyParts);
     QStringList out;
@@ -192,180 +191,141 @@ QString sanitizeIsoPath(const QString &path, QHash<QString, QSet<QString>> &dirT
     return out.join('/');
 }
 
-bool MainArchiveConverter::convert_archive(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
+void MainArchiveConverter::convert_archive(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
 {
     QFileInfo input_file_info(input_path);
-    QString full_input_ext = input_extension.toLower();
     QString base_name = input_file_info.completeBaseName();
     QString suffix = input_file_info.suffix().toLower();
+    QString full_input_ext = input_extension.toLower();
     QStringList compression_exts = {"gz", "bz2", "xz", "zst"};
     if (compression_exts.contains(suffix)) {
-        QString temp_base = input_file_info.completeBaseName();
-        QFileInfo temp_info(temp_base);
+        QFileInfo temp_info(input_file_info.completeBaseName());
         QString inner_ext = temp_info.suffix().toLower();
-        if (inner_ext == "tar") {
-            full_input_ext = "tar." + suffix;
-            base_name = temp_info.completeBaseName();
-        } else if (inner_ext == "xar") {
-            full_input_ext = "xar." + suffix;
+        if (inner_ext == "tar" || inner_ext == "xar") {
+            full_input_ext = inner_ext + "." + suffix;
             base_name = temp_info.completeBaseName();
         }
     }
+    QString output_dir;
+    QString output_filename;
+    QFileInfo output_info(output_path);
+    if (QDir(output_path).exists()) {
+        output_dir = output_path;
+        output_filename = base_name;
+    } else {
+        output_dir = output_info.absolutePath();
+        output_filename = output_info.completeBaseName();
+    }
+    QDir().mkpath(output_dir);
+    QString final_output = output_dir + "/" + output_filename + "." + output_extension.toLower();
     struct archive *input_file = archive_read_new();
     struct archive *output_file = archive_write_new();
     struct archive_entry *entry;
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
-    ifstream save_json(json_path.toStdString());
-    QString tar_ext;
-    json load_data;
-    bool is_ar = false;
-    bool enable_determ = false;
-    int r;
-    QFileInfo output_info(output_path);
-    QString output_dir = output_info.absolutePath();
-    QString output_filename = output_info.fileName();
-    QStringList input_formats = {"tar", "zip", "xar", "cpio", "ar", "iso"};
-    QStringList compression_formats = {"gz", "bz2", "xz", "zst"};
-    QString clean_basename = output_filename;
-    QFileInfo temp_info(clean_basename);
-    if (!temp_info.suffix().isEmpty()) {
-        clean_basename = temp_info.completeBaseName();
-    }
-    temp_info = QFileInfo(clean_basename);
-    QString potential_compression = temp_info.suffix().toLower();
-    if (compression_formats.contains(potential_compression)) {
-        clean_basename = temp_info.completeBaseName();
-        temp_info = QFileInfo(clean_basename);
-        QString potential_archive = temp_info.suffix().toLower();
-
-        if (input_formats.contains(potential_archive)) {
-            clean_basename = temp_info.completeBaseName();
-        }
-    } else if (input_formats.contains(potential_compression)) {
-        clean_basename = temp_info.completeBaseName();
-    }
-    QString final_output = output_dir + "/" + clean_basename + "." + output_extension.toLower();
     archive_read_support_format_all(input_file);
     archive_read_support_filter_all(input_file);
     if (!set_output_format(output_file, output_extension))
     {
-        if (output_extension == "XAR")
-        {
-            emit conversion_finished(false, "Cannot convert to xar due to OS discrepencies (Non Apple/MacOS)");
-        }
-        else
-        {
-            emit conversion_finished(false, "Unsupported output format: " + output_extension);
-        }
-        return false;
+        QString error_msg = (output_extension == "XAR")
+        ? "Cannot convert to xar due to OS discrepancies (Non Apple/MacOS)"
+        : "Unsupported output format: " + output_extension;
+        emit update_archive_progress(error_msg, false);
+        archive_read_free(input_file);
+        archive_write_free(output_file);
+        return;
     }
-    if (save_json.is_open())
-    {
+    QString source_location = QString(__FILE__);
+    QFileInfo file_info(source_location);
+    QString json_path = file_info.absolutePath() + "/conversion_preferences.json";
+    json load_data;
+    std::ifstream save_json(json_path.toStdString());
+    if (save_json.is_open()) {
         save_json >> load_data;
         save_json.close();
     }
+    QString tar_ext;
+    bool is_ar = false;
+    bool enable_determ = false;
     if (load_data.contains("archive"))
     {
         auto archive_preferences = load_data["archive"];
         if (output_extension == "ZIP")
         {
-            QString zip_comp_method = (QString::fromStdString(archive_preferences["zip"]["comp_method"])).toLower();
+            QString zip_comp_method = QString::fromStdString(archive_preferences["zip"]["comp_method"]).toLower();
             if (zip_comp_method != "n/a")
             {
                 QString option;
-                if (zip_comp_method == "deflate") {
-                    option = "zip:compression=deflate";
-                }
-                else if (zip_comp_method == "store") {
-                    option = "zip:compression=store";
-                }
-                else if (zip_comp_method == "bzip2") {
-                    option = "zip:compression=bzip2";
-                }
-                else if (zip_comp_method == "lzma") {
-                    option = "zip:compression=lzma";
-                }
-                else if (zip_comp_method == "zstd") {
-                    option = "zip:compression=zstd";
+                if (zip_comp_method == "deflate") option = "zip:compression=deflate";
+                else if (zip_comp_method == "store") option = "zip:compression=store";
+                else if (zip_comp_method == "bzip2") option = "zip:compression=bzip2";
+                else if (zip_comp_method == "lzma") option = "zip:compression=lzma";
+                else if (zip_comp_method == "zstd") option = "zip:compression=zstd";
+
+                if (!option.isEmpty()) {
+                    archive_write_set_options(output_file, option.toStdString().c_str());
                 }
             }
-            QString zip_comp_level = (QString::fromStdString(archive_preferences["zip"]["comp_level"])).toLower();
+            QString zip_comp_level = QString::fromStdString(archive_preferences["zip"]["comp_level"]).toLower();
             if (zip_comp_level != "n/a")
             {
                 QString level_option;
-                if (zip_comp_level == "store") {
-                    level_option = "zip:compression-level=0";
-                }
-                else if (zip_comp_level == "fast") {
-                    level_option = "zip:compression-level=3";
-                }
-                else if (zip_comp_level == "normal") {
-                    level_option = "zip:compression-level=6";
-                }
-                else if (zip_comp_level == "maximum") {
-                    level_option = "zip:compression-level=9";
+                if (zip_comp_level == "store") level_option = "zip:compression-level=0";
+                else if (zip_comp_level == "fast") level_option = "zip:compression-level=3";
+                else if (zip_comp_level == "normal") level_option = "zip:compression-level=6";
+                else if (zip_comp_level == "maximum") level_option = "zip:compression-level=9";
+
+                if (!level_option.isEmpty()) {
+                    archive_write_set_options(output_file, level_option.toStdString().c_str());
                 }
             }
         }
         else if (output_extension == "TAR")
         {
-            QString tar_comp_method = (QString::fromStdString(archive_preferences["tar"]["comp_method"])).toLower();
+            QString tar_comp_method = QString::fromStdString(archive_preferences["tar"]["comp_method"]).toLower();
             if (tar_comp_method != "n/a")
             {
-                if (tar_comp_method == "gzip")
-                {
+                if (tar_comp_method == "gzip") {
                     archive_write_add_filter_gzip(output_file);
                     tar_ext = ".gz";
                 }
-                else if (tar_comp_method == "bzip2")
-                {
+                else if (tar_comp_method == "bzip2") {
                     archive_write_add_filter_bzip2(output_file);
                     tar_ext = ".bz2";
                 }
-                else if (tar_comp_method == "xz")
-                {
+                else if (tar_comp_method == "xz") {
                     archive_write_add_filter_xz(output_file);
                     tar_ext = ".xz";
                 }
-                else if (tar_comp_method == "zstd")
-                {
+                else if (tar_comp_method == "zstd") {
                     archive_write_add_filter_zstd(output_file);
                     tar_ext = ".zst";
                 }
             }
-            else
-            {
+            else {
                 archive_write_add_filter_none(output_file);
             }
-            if (!tar_ext.isEmpty())
-            {
-                QFileInfo final_info(final_output);
-                QString dir = final_info.absolutePath();
-                QString base = final_info.completeBaseName();
-                final_output = dir + "/" + base + ".tar" + tar_ext;
+
+            if (!tar_ext.isEmpty()) {
+                final_output = output_dir + "/" + output_filename + ".tar" + tar_ext;
             }
+
             bool tar_pres_metadata = archive_preferences["tar"]["pres_metadata"][0];
-            if (tar_pres_metadata)
-            {
+            if (tar_pres_metadata) {
                 archive_write_set_options(output_file, "hdrcharset=UTF-8");
             }
         }
         else if (output_extension == "XAR")
         {
-            QString xar_comp_method = (QString::fromStdString(archive_preferences["xar"]["comp_method"])).toLower();
+            QString xar_comp_method = QString::fromStdString(archive_preferences["xar"]["comp_method"]).toLower();
             if (xar_comp_method != "n/a")
             {
-                if (xar_comp_method == "gzip") {archive_write_set_options(output_file, "compression=gzip");}
-                else if (xar_comp_method == "bzip2") {archive_write_set_options(output_file, "compression=bzip2");}
-                else if (xar_comp_method == "xz") {archive_write_set_options(output_file, "compression=xz");}
+                if (xar_comp_method == "gzip") archive_write_set_options(output_file, "compression=gzip");
+                else if (xar_comp_method == "bzip2") archive_write_set_options(output_file, "compression=bzip2");
+                else if (xar_comp_method == "xz") archive_write_set_options(output_file, "compression=xz");
             }
-            else
-            {
+            else {
                 archive_write_add_filter_none(output_file);
             }
+
             bool xar_pres_metadata = archive_preferences["xar"]["pres_metadata"][0];
             if (xar_pres_metadata)
             {
@@ -375,81 +335,86 @@ bool MainArchiveConverter::convert_archive(const QString &input_path, const QStr
         }
         else if (output_extension == "CPIO")
         {
-            QString cpio_format = (QString::fromStdString(archive_preferences["cpio"]["format"])).toLower();
+            QString cpio_format = QString::fromStdString(archive_preferences["cpio"]["format"]).toLower();
             if (cpio_format != "n/a")
             {
-                if (cpio_format == "newc") {archive_write_set_format_cpio_newc(output_file);}
-                else if (cpio_format == "odc") {archive_write_set_format_cpio_odc(output_file);}
-
+                if (cpio_format == "newc") archive_write_set_format_cpio_newc(output_file);
+                else if (cpio_format == "odc") archive_write_set_format_cpio_odc(output_file);
             }
+
             bool cpio_pres_metadata = archive_preferences["cpio"]["pres_metadata"][0];
-            if (cpio_pres_metadata)
-            {
+            if (cpio_pres_metadata) {
                 archive_write_set_options(output_file, "hdrcharset=UTF-8");
             }
         }
         else if (output_extension == "AR")
         {
-            QString ar_format = (QString::fromStdString(archive_preferences["ar"]["format"])).toLower();
+            QString ar_format = QString::fromStdString(archive_preferences["ar"]["format"]).toLower();
             if (ar_format != "n/a")
             {
-                if (ar_format == "gnu") {archive_write_set_format_ar_svr4(output_file);}
-                else {archive_write_set_format_ar_bsd(output_file);}
+                if (ar_format == "gnu") archive_write_set_format_ar_svr4(output_file);
+                else archive_write_set_format_ar_bsd(output_file);
             }
+
             is_ar = true;
             bool determ_mode = archive_preferences["ar"]["determ_mode"][0];
-            if (determ_mode)
-            {
+            if (determ_mode) {
                 enable_determ = true;
             }
         }
     }
-    if (archive_write_open_filename(output_file, (final_output.toStdString()).c_str()) != ARCHIVE_OK)
+    if (archive_write_open_filename(output_file, final_output.toStdString().c_str()) != ARCHIVE_OK)
     {
-        emit conversion_finished(false, "Failed opening output file: " + final_output);
+        QString error = archive_error_string(output_file)
+        ? QString::fromUtf8(archive_error_string(output_file))
+        : "Failed opening output file: " + final_output;
+        emit update_archive_progress(error, false);
         archive_read_close(input_file);
+        archive_read_free(input_file);
         archive_write_close(output_file);
-        return false;
+        archive_write_free(output_file);
+        return;
     }
-    if (archive_read_open_filename(input_file, (input_path.toStdString()).c_str(), 10240) != ARCHIVE_OK)
+    if (archive_read_open_filename(input_file, input_path.toStdString().c_str(), 10240) != ARCHIVE_OK)
     {
-        emit conversion_finished(false, "Failed opening input file: " + input_path);
+        QString error = archive_error_string(input_file)
+        ? QString::fromUtf8(archive_error_string(input_file))
+        : "Failed opening input file: " + input_path;
+        emit update_archive_progress(error, false);
         archive_read_close(input_file);
+        archive_read_free(input_file);
         archive_write_close(output_file);
-        return false;
+        archive_write_free(output_file);
+        return;
     }
     if (input_path.isEmpty())
     {
-        emit conversion_finished(false, "No file selected");
+        emit update_archive_progress("No file selected", false);
         archive_read_close(input_file);
+        archive_read_free(input_file);
         archive_write_close(output_file);
-        QFile::remove(output_path);
-        return false;
+        archive_write_free(output_file);
+        QFile::remove(final_output);
+        return;
     }
     QHash<QString, QSet<QString>> isoDirTables;
     QHash<QString, QString> isoDirPathMap;
-    bool is_gnu_ar = false;
-    if (output_extension == "AR" && load_data.contains("archive"))
-    {
-        QString ar_format = QString::fromStdString(load_data["archive"]["ar"]["format"]).toUpper();
-        is_gnu_ar = (ar_format == "GNU");
-    }
     QSet<QString> ar_used_names;
-    if (is_gnu_ar && output_extension == "AR")
+    bool is_gnu_ar = (output_extension == "AR" && load_data.contains("archive") &&
+                      QString::fromStdString(load_data["archive"]["ar"]["format"]).toUpper() == "GNU");
+    if (is_gnu_ar)
     {
         QStringList long_filenames;
         struct archive *scan_archive = archive_read_new();
         archive_read_support_format_all(scan_archive);
         archive_read_support_filter_all(scan_archive);
-
         if (archive_read_open_filename(scan_archive, input_path.toStdString().c_str(), 10240) == ARCHIVE_OK)
         {
             struct archive_entry *scan_entry;
             while (archive_read_next_header(scan_archive, &scan_entry) == ARCHIVE_OK)
             {
                 QString filename = QFileInfo(QString::fromUtf8(archive_entry_pathname(scan_entry))).fileName();
-                if (filename.length() > 15)
-                {
+                if (filename.length() > 15) {
                     long_filenames.append(filename);
                 }
             }
@@ -459,8 +424,7 @@ bool MainArchiveConverter::convert_archive(const QString &input_path, const QStr
         if (!long_filenames.isEmpty())
         {
             QString strtab_content;
-            for (const QString &fname : long_filenames)
-            {
+            for (const QString &fname : long_filenames) {
                 strtab_content += fname + "/\n";
             }
             struct archive_entry *strtab_entry = archive_entry_new();
@@ -468,8 +432,7 @@ bool MainArchiveConverter::convert_archive(const QString &input_path, const QStr
             archive_entry_set_size(strtab_entry, strtab_content.length());
             archive_entry_set_filetype(strtab_entry, AE_IFREG);
             archive_entry_set_perm(strtab_entry, 0644);
-            if (archive_write_header(output_file, strtab_entry) == ARCHIVE_OK)
-            {
+            if (archive_write_header(output_file, strtab_entry) == ARCHIVE_OK) {
                 archive_write_data(output_file, strtab_content.toUtf8().constData(), strtab_content.length());
             }
             archive_entry_free(strtab_entry);
@@ -500,19 +463,11 @@ bool MainArchiveConverter::convert_archive(const QString &input_path, const QStr
             const char *orig = archive_entry_pathname(entry);
             QString orig_name = QString::fromUtf8(orig);
             QString file_name = QFileInfo(orig_name).fileName();
-            bool is_gnu = false;
-            if (load_data.contains("archive") && load_data["archive"].contains("ar") && load_data["archive"]["ar"].contains("format"))
-            {
-                QString ar_format = QString::fromStdString(load_data["archive"]["ar"]["format"]);
-                is_gnu = (ar_format == "GNU");
-            }
-            if (is_gnu)
-            {
+            if (is_gnu_ar) {
                 archive_entry_set_pathname(entry, file_name.toUtf8().constData());
             }
-            else
-            {
-                QString sanitized = sanitizeArName(orig_name, ar_used_names, is_gnu);
+            else {
+                QString sanitized = sanitizeArName(orig_name, ar_used_names, false);
                 archive_entry_set_pathname(entry, sanitized.toUtf8().constData());
             }
             if (enable_determ)
@@ -524,13 +479,12 @@ bool MainArchiveConverter::convert_archive(const QString &input_path, const QStr
                 archive_entry_set_gid(entry, 0);
                 archive_entry_set_uname(entry, nullptr);
                 archive_entry_set_gname(entry, nullptr);
+
                 mode_t current_mode = archive_entry_mode(entry);
-                if (S_ISDIR(current_mode))
-                {
+                if (S_ISDIR(current_mode)) {
                     archive_entry_set_perm(entry, 0755);
                 }
-                else
-                {
+                else {
                     mode_t new_perm = (current_mode & 0111) ? 0755 : 0644;
                     archive_entry_set_perm(entry, new_perm);
                 }
@@ -543,9 +497,7 @@ bool MainArchiveConverter::convert_archive(const QString &input_path, const QStr
         const size_t buf_size = 8192;
         char buf[buf_size];
         ssize_t len;
-        int64_t bytes_written = 0;
         while ((len = archive_read_data(input_file, buf, buf_size)) > 0) {
-            bytes_written += len;
             if (archive_write_data(output_file, buf, len) < 0) {
                 qWarning() << "Write data failed:" << archive_error_string(output_file);
                 break;
@@ -560,45 +512,10 @@ bool MainArchiveConverter::convert_archive(const QString &input_path, const QStr
     archive_write_close(output_file);
     archive_write_free(output_file);
     QString final_ext = output_extension.toLower();
-    if (output_extension == "TAR" && !tar_ext.isEmpty())
-    {
+    if (output_extension == "TAR" && !tar_ext.isEmpty()) {
         final_ext = "tar" + tar_ext;
     }
-    QString success_message = "Success: " + base_name + '.' + full_input_ext + " has been converted to " + base_name + '.' + final_ext;
-    emit conversion_finished(true, success_message);
-    return true;
-}
-
-QString convert_archive_file(QString file_path, QString input_extension, QString output_extension, QString save_folder)
-{
-    QString input_info;
-    if (input_extension != "TAR" && input_extension != "XAR")
-    {
-        input_info = input_extension + " Files " + "(*." + input_extension.toLower() + ")";
-    }
-    else
-    {
-        if (input_extension == "TAR")
-        {
-            input_info = "TAR Files (*.tar, *.tar.gz, *.tar.bz2, *.tar.xz, *.tar.zst)";
-        }
-        else
-        {
-            input_info = "XAR Files (*.xar, *.xar.gz, *.xar.bz2, *.xar.xz)";
-        }
-    }
-    QFileInfo input_file_info(file_path);
-    QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
-    QDir output_dir(save_folder);
-    QString output_path = output_dir.filePath(output_name);
-    QString result_message;
-    MainArchiveConverter *converter = new MainArchiveConverter();
-    if (!converter->convert_archive(file_path, output_path, input_extension, output_extension)) {}
-    else
-    {
-        result_message = "Success: " + input_file_info.completeBaseName() + "." + input_extension.toLower() + " has been converted to " + output_name;
-    }
-    delete converter;
-    converter = nullptr;
-    return result_message;
+    QString success_message = QString("Success: %1.%2 has been converted to %3.%4")
+                                  .arg(base_name, full_input_ext, output_filename, final_ext);
+    emit update_archive_progress(success_message, true);
 }
