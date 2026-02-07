@@ -7,7 +7,7 @@ class ImageFileConverter
 {
     public:
         virtual ~ImageFileConverter() {}
-        virtual bool convert_image(const QString &input_path, const QString &output_path, const ImageFormatCapabilities &settings, QString &error_message) = 0;
+        bool convert_image(const QString &input_path, const QString &output_path, const ImageFormatCapabilities &settings, QString &error_message);
 };
 
 #endif //IMAGEFILECONVERTER

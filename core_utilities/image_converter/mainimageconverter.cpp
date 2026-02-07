@@ -3,30 +3,42 @@
 #include <fstream>
 #include <QFileDialog>
 #include <QImage>
+#include <QImageWriter>
 #include <QPainter>
 
 using json = nlohmann::json;
 using namespace std;
 
-bool MainImageConverter::convert_image(const QString &input_path, const QString &output_path, const ImageFormatCapabilities &settings, QString &error_message)
+MainImageConverter::MainImageConverter(QObject *parent)
+    : ImageFileConverter(), QObject(parent) {}
+
+void MainImageConverter::convert_image(const QString &input_path, const QString &output_path, const QString &input_ext, const QString &output_ext)
 {
+    QFileInfo input_file_info(input_path);
+    QString output_name = input_file_info.completeBaseName() + "." + output_ext.toLower();
+    QString complete_output = QDir(output_path).filePath(output_name);
+    const auto &capabilities = image_capabilities[output_ext.toLower()];
     QImage image;
     if (!image.load(input_path))
     {
-        error_message = "Failed to load image.";
-        return false;
+        emit update_image_progress("Image could not be loaded.", false);
+        return;
     }
     QString source_location = QString(__FILE__);
     QFileInfo file_info(source_location);
     QString cpp_directory = file_info.absolutePath();
     QString json_path = cpp_directory + "/conversion_preferences.json";
     ifstream save_json(json_path.toStdString());
+    int image_quality = -1;
     if (!save_json.is_open())
     {
-        if (!image.save(input_path))
+        QImageWriter writer(complete_output);
+        writer.setFormat(output_ext.toLower().toUtf8());
+        if (!writer.write(image))
         {
-            error_message = "Failed to save image.";
-            return false;
+            QString error_msg = QString("Image could not be converted: %1").arg(writer.errorString());
+            emit update_image_progress(error_msg, false);
+            return;
         }
     }
     else
@@ -49,8 +61,14 @@ bool MainImageConverter::convert_image(const QString &input_path, const QString 
                 double target_ratio = static_cast<double>(first_num.toInt()) / second_num.toInt();
                 int new_width = width;
                 int new_height = height;
-                if (current_ratio > target_ratio) {new_height = static_cast<int>(width / target_ratio);}
-                else if (current_ratio < target_ratio) {new_width = static_cast<int>(height * target_ratio);}
+                if (current_ratio > target_ratio)
+                {
+                    new_height = static_cast<int>(width / target_ratio);
+                }
+                else if (current_ratio < target_ratio)
+                {
+                    new_width = static_cast<int>(height * target_ratio);
+                }
                 QImage padded(new_width, new_height, image.format());
                 padded.fill(Qt::transparent);
                 QPainter painter(&padded);
@@ -60,57 +78,54 @@ bool MainImageConverter::convert_image(const QString &input_path, const QString 
                 painter.end();
                 image = padded;
             }
-            if (settings.grayscale_support && image_preferences["grayscale"][0]) {image = image.convertToFormat(QImage::Format_Grayscale8);}
-            if (settings.alpha_support && image.hasAlphaChannel() && image_preferences["alpha"][0]) {image = image.convertToFormat(QImage::Format_RGB32);}
-            if (settings.bit_depth_support && image_preferences["bitdepth"][0])
+            if (capabilities.grayscale_support && image_preferences["grayscale"][0])
+            {
+                image = image.convertToFormat(QImage::Format_Grayscale8);
+            }
+            if (capabilities.alpha_support && image.hasAlphaChannel() && image_preferences["alpha"][0])
+            {
+                image = image.convertToFormat(QImage::Format_RGB32);
+            }
+            if (capabilities.bit_depth_support && image_preferences["bitdepth"][0])
             {
                 int bit_depth = (QString::fromStdString(image_preferences["bitdepth"][1])).toInt();
-                if (bit_depth == 1) {image = image.convertToFormat(QImage::Format_Mono);}
-                else if (bit_depth == 8) {image = image.convertToFormat(QImage::Format_Indexed8);}
-                else if (bit_depth == 24) {image = image.convertToFormat(QImage::Format_RGB888);}
-                else if (bit_depth == 32) {image = image.convertToFormat(QImage::Format_RGB32);}
+                if (bit_depth == 1)
+                {
+                    image = image.convertToFormat(QImage::Format_Mono);
+                }
+                else if (bit_depth == 8)
+                {
+                    image = image.convertToFormat(QImage::Format_Indexed8);
+                }
+                else if (bit_depth == 24)
+                {
+                    image = image.convertToFormat(QImage::Format_RGB888);
+                }
+                else if (bit_depth == 32)
+                {
+                    image = image.convertToFormat(QImage::Format_RGB32);
+                }
             }
             QString quality = QString::fromStdString(image_preferences["quality"][1]);
-            if (settings.quality_support && quality != "None")
+            if (capabilities.quality_support && quality != "None")
             {
-                int image_quality = quality.toInt();
-                if (!image.save(output_path, nullptr, image_quality))
-                {
-                    error_message = "Failed to save image.";
-                    return false;
-                }
+                image_quality = quality.toInt();
             }
         }
     }
-    if (!image.save(output_path))
+    QImageWriter writer(complete_output);
+    writer.setFormat(output_ext.toLower().toUtf8());
+    if (image_quality != -1)
     {
-        error_message = "Failed to save iamge.";
-        return false;
+        writer.setQuality(image_quality);
     }
-    return true;
-}
-
-// Used for image file conversion (so far, it only supports the base image read and write of QImageReader/Writer)
-QString convert_image_file(QString file_path, QString input_extension, QString output_extension, QString save_folder)
-{
-    if (file_path.isEmpty())
+    if (!writer.write(image))
     {
-        return "No image file selected";
+        QString error_msg = QString("Image could not be converted: %1").arg(writer.errorString());
+        emit update_image_progress(error_msg, false);
+        return;
     }
-    QFileInfo input_file_info(file_path);
-    QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
-    QDir output_dir(save_folder);
-    QString output_path = output_dir.filePath(output_name);
-    QString error_message;
-    MainImageConverter converter;
-    const auto &capabilities = image_capabilities[output_extension.toLower()];
-    if (!converter.convert_image(file_path, output_path, capabilities, error_message))
-    {
-        return error_message;
-    }
-    else
-    {
-        QString success_message = "Success: " + input_file_info.completeBaseName() + "." + input_extension.toLower() + " has been converted to " + output_name;
-        return success_message;
-    }
+    QString result = QString("Success: %1.%2 has been converted to %3")
+        .arg(input_file_info.completeBaseName()).arg(input_ext.toLower()).arg(output_name);
+    emit update_image_progress(result, true);
 }

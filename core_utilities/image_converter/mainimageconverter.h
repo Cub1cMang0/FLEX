@@ -4,12 +4,14 @@
 #include <QImage>
 #include "imagefileconverter.h"
 
-class MainImageConverter: ImageFileConverter
+class MainImageConverter: public QObject, public ImageFileConverter
 {
+    Q_OBJECT
     public:
-        bool convert_image(const QString &input_path, const QString &output_path, const ImageFormatCapabilities &settings, QString &error_message) override;
+        explicit MainImageConverter(QObject *parent = nullptr);
+        void convert_image(const QString &input_path, const QString &output_path, const QString &input_ext, const QString &output_ext);
+    signals:
+        void update_image_progress(const QString &message, bool success);
 };
-
-QString convert_image_file(QString file_path, QString input_extension, QString output_extension, QString save_folder);
 
 #endif
