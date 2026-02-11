@@ -6,298 +6,361 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>760</width>
-    <height>677</height>
+    <width>725</width>
+    <height>698</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QLabel" name="zip_info">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>40</y>
-     <width>371</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>ZIP Compression Method: </string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="zip_comp_method">
-   <property name="geometry">
-    <rect>
-     <x>340</x>
-     <y>43</y>
-     <width>81</width>
-     <height>31</height>
-    </rect>
-   </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <property name="text">
-     <string>N/A</string>
-    </property>
+    <layout class="QHBoxLayout" name="zip_hlayout">
+     <item>
+      <widget class="QLabel" name="zip_info">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>ZIP Compression Method: </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="zip_comp_method">
+       <item>
+        <property name="text">
+         <string>N/A</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Deflate</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Store</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Bzip2</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Lzma</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Zstd</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_11">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="zip_level_info_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Level:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="zip_comp_slider">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximum">
+        <number>4</number>
+       </property>
+       <property name="pageStep">
+        <number>1</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="tickPosition">
+        <enum>QSlider::TickPosition::TicksAbove</enum>
+       </property>
+       <property name="tickInterval">
+        <number>1</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="zip_level_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>N/A</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_10">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Policy::Preferred</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
    </item>
    <item>
-    <property name="text">
-     <string>Deflate</string>
-    </property>
+    <layout class="QHBoxLayout" name="seven_zip_hlayout">
+     <item>
+      <widget class="QLabel" name="seven_zip_info">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>7Zip Compression Method:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="seven_zip_comp_method">
+       <item>
+        <property name="text">
+         <string>N/A</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Lzma</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Lzma2</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Ppmd</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Zstd</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_12">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="seven_zip_level_info">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Level:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="seven_zip_comp_slider">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximum">
+        <number>4</number>
+       </property>
+       <property name="pageStep">
+        <number>1</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="tickPosition">
+        <enum>QSlider::TickPosition::TicksAbove</enum>
+       </property>
+       <property name="tickInterval">
+        <number>1</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="seven_zip_level_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>N/A</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_9">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Policy::Preferred</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
    </item>
    <item>
-    <property name="text">
-     <string>Store</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Bzip2</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Lzma</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Zstd</string>
-    </property>
-   </item>
-  </widget>
-  <widget class="QSlider" name="zip_comp_slider">
-   <property name="geometry">
-    <rect>
-     <x>600</x>
-     <y>40</y>
-     <width>131</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="maximum">
-    <number>4</number>
-   </property>
-   <property name="pageStep">
-    <number>1</number>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Orientation::Horizontal</enum>
-   </property>
-   <property name="tickPosition">
-    <enum>QSlider::TickPosition::TicksAbove</enum>
-   </property>
-   <property name="tickInterval">
-    <number>1</number>
-   </property>
-  </widget>
-  <widget class="QLabel" name="zip_level_label">
-   <property name="geometry">
-    <rect>
-     <x>600</x>
-     <y>51</y>
-     <width>131</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>N/A</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignmentFlag::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="seven_zip_info">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>100</y>
-     <width>381</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>7Zip Compression Method:</string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="seven_zip_comp_method">
-   <property name="geometry">
-    <rect>
-     <x>340</x>
-     <y>100</y>
-     <width>81</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <item>
-    <property name="text">
-     <string>N/A</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Lzma</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Lzma2</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Ppmd</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Zstd</string>
-    </property>
-   </item>
-  </widget>
-  <widget class="QSlider" name="seven_zip_comp_slider">
-   <property name="geometry">
-    <rect>
-     <x>600</x>
-     <y>100</y>
-     <width>131</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="maximum">
-    <number>4</number>
-   </property>
-   <property name="pageStep">
-    <number>1</number>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Orientation::Horizontal</enum>
-   </property>
-   <property name="tickPosition">
-    <enum>QSlider::TickPosition::TicksAbove</enum>
-   </property>
-   <property name="tickInterval">
-    <number>1</number>
-   </property>
-  </widget>
-  <widget class="QLabel" name="seven_zip_level_label">
-   <property name="geometry">
-    <rect>
-     <x>600</x>
-     <y>111</y>
-     <width>131</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>N/A</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignmentFlag::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="tar_info">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>160</y>
-     <width>291</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>TAR Compression Method:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="tar_metadata_label">
-   <property name="geometry">
-    <rect>
-     <x>480</x>
-     <y>160</y>
-     <width>221</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Preserve Metadata:</string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="tar_comp_method">
-   <property name="geometry">
-    <rect>
-     <x>340</x>
-     <y>160</y>
-     <width>81</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <item>
-    <property name="text">
-     <string>N/A</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Gzip</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Bzip2</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Xz</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Zstd</string>
-    </property>
-   </item>
-  </widget>
-  <widget class="QCheckBox" name="tar_metadata_cb">
-   <property name="geometry">
-    <rect>
-     <x>710</x>
-     <y>170</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
+    <layout class="QHBoxLayout" name="tar_hlayout">
+     <item>
+      <widget class="QLabel" name="tar_info">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>TAR Compression Method:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="tar_comp_method">
+       <item>
+        <property name="text">
+         <string>N/A</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Gzip</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Bzip2</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Xz</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Zstd</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_8">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="tar_metadata_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Preserve Metadata:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="tar_metadata_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
     width: 18px;
     height: 18px;
 	border: 1px solid grey;
@@ -308,88 +371,87 @@
 QCheckBox::indicator:checked {
 	background: #32a6ff;
 }</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QLabel" name="xar_info_label">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>220</y>
-     <width>291</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>XAR Compression Method: </string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="xar_comp_method">
-   <property name="geometry">
-    <rect>
-     <x>340</x>
-     <y>220</y>
-     <width>81</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <item>
-    <property name="text">
-     <string>N/A</string>
-    </property>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
-    <property name="text">
-     <string>Gzip</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Bzip2</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Xz</string>
-    </property>
-   </item>
-  </widget>
-  <widget class="QLabel" name="xar_metadata_label">
-   <property name="geometry">
-    <rect>
-     <x>480</x>
-     <y>220</y>
-     <width>211</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Preserve Metadata:</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="xar_metadata_cb">
-   <property name="geometry">
-    <rect>
-     <x>710</x>
-     <y>230</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
+    <layout class="QHBoxLayout" name="xar_hlayout">
+     <item>
+      <widget class="QLabel" name="xar_info_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>XAR Compression Method: </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="xar_comp_method">
+       <item>
+        <property name="text">
+         <string>N/A</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Gzip</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Bzip2</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Xz</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_7">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="xar_metadata_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Preserve Metadata:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="xar_metadata_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
     width: 18px;
     height: 18px;
 	border: 1px solid grey;
@@ -400,101 +462,88 @@ QCheckBox::indicator:checked {
 QCheckBox::indicator:checked {
 	background: #32a6ff;
 }</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QLabel" name="iso_info_label">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>390</y>
-     <width>211</width>
-     <height>51</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>ISO (9660) Naming:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="cpio_info">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>280</y>
-     <width>141</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>CPIO Format: </string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="cpio_format">
-   <property name="geometry">
-    <rect>
-     <x>340</x>
-     <y>280</y>
-     <width>81</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <item>
-    <property name="text">
-     <string>N/A</string>
-    </property>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
-    <property name="text">
-     <string>Newc</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Odc</string>
-    </property>
-   </item>
-  </widget>
-  <widget class="QLabel" name="cpio_metadata_label">
-   <property name="geometry">
-    <rect>
-     <x>480</x>
-     <y>280</y>
-     <width>211</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Preserve Metadata:</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="cpio_metadata_cb">
-   <property name="geometry">
-    <rect>
-     <x>710</x>
-     <y>290</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
+    <layout class="QHBoxLayout" name="cpio_hlayout">
+     <item>
+      <widget class="QLabel" name="cpio_info">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>CPIO Format: </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="cpio_format">
+       <item>
+        <property name="text">
+         <string>N/A</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Newc</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Odc</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_6">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="cpio_metadata_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Preserve Metadata:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="cpio_metadata_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
     width: 18px;
     height: 18px;
 	border: 1px solid grey;
@@ -505,91 +554,276 @@ QCheckBox::indicator:checked {
 QCheckBox::indicator:checked {
 	background: #32a6ff;
 }</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="save_preferences">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>560</y>
-     <width>121</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Save Preferences</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="cancel_preferences">
-   <property name="geometry">
-    <rect>
-     <x>490</x>
-     <y>560</y>
-     <width>121</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Cancel Preferences</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="ar_info_label">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>340</y>
-     <width>121</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>AR Format:</string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="ar_format">
-   <property name="geometry">
-    <rect>
-     <x>340</x>
-     <y>340</y>
-     <width>81</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <item>
-    <property name="text">
-     <string>N/A</string>
-    </property>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
-    <property name="text">
-     <string>GNU</string>
-    </property>
+    <layout class="QHBoxLayout" name="ar_hlayout">
+     <item>
+      <widget class="QLabel" name="ar_info_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>AR Format:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="ar_format">
+       <item>
+        <property name="text">
+         <string>N/A</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>GNU</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>BSD</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_5">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Policy::Expanding</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="ar_determ_mode_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Deterministic Mode:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="ar_determ_mode_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+	border: 1px solid grey;
+	border-radius: 4px;
+	color: white;
+}
+
+QCheckBox::indicator:checked {
+	background: #32a6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
-    <property name="text">
-     <string>BSD</string>
-    </property>
+    <layout class="QHBoxLayout" name="iso_hlayout1">
+     <item>
+      <widget class="QLabel" name="iso_info_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>ISO (9660) Naming:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_4">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Policy::Preferred</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="iso_uppercase_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Uppercase:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="iso_uppercase_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+	border: 1px solid grey;
+	border-radius: 4px;
+	color: white;
+}
+
+QCheckBox::indicator:checked {
+	background: #32a6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Policy::Preferred</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="enforce_83_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>8.3 filename:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="iso_enforce_83_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+	border: 1px solid grey;
+	border-radius: 4px;
+	color: white;
+}
+
+QCheckBox::indicator:checked {
+	background: #32a6ff;
+}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
-  </widget>
-  <widget class="QCheckBox" name="ar_determ_mode_cb">
-   <property name="geometry">
-    <rect>
-     <x>710</x>
-     <y>350</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
+   <item>
+    <layout class="QHBoxLayout" name="iso_hlayout2">
+     <item>
+      <widget class="QLabel" name="iso_rm_invalid_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Remove invalid characters:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="iso_rm_invalid_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
     width: 18px;
     height: 18px;
 	border: 1px solid grey;
@@ -600,197 +834,49 @@ QCheckBox::indicator:checked {
 QCheckBox::indicator:checked {
 	background: #32a6ff;
 }</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QLabel" name="ar_determ_mode_label">
-   <property name="geometry">
-    <rect>
-     <x>480</x>
-     <y>340</y>
-     <width>221</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Deterministic Mode:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="zip_level_info_label">
-   <property name="geometry">
-    <rect>
-     <x>480</x>
-     <y>40</y>
-     <width>61</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Level:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="seven_zip_level_info">
-   <property name="geometry">
-    <rect>
-     <x>480</x>
-     <y>100</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Level:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="iso_uppercase_label">
-   <property name="geometry">
-    <rect>
-     <x>340</x>
-     <y>400</y>
-     <width>131</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Uppercase:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="enforce_83_label">
-   <property name="geometry">
-    <rect>
-     <x>560</x>
-     <y>400</y>
-     <width>141</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>8.3 filename:</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="iso_uppercase_cb">
-   <property name="geometry">
-    <rect>
-     <x>470</x>
-     <y>410</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
-	border: 1px solid grey;
-	border-radius: 4px;
-	color: white;
-}
-
-QCheckBox::indicator:checked {
-	background: #32a6ff;
-}</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="iso_enforce_83_cb">
-   <property name="geometry">
-    <rect>
-     <x>710</x>
-     <y>410</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
-	border: 1px solid grey;
-	border-radius: 4px;
-	color: white;
-}
-
-QCheckBox::indicator:checked {
-	background: #32a6ff;
-}</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QLabel" name="iso_rm_invalid_label">
-   <property name="geometry">
-    <rect>
-     <x>410</x>
-     <y>440</y>
-     <width>291</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Remove invalid characters:</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="iso_rm_invalid_cb">
-   <property name="geometry">
-    <rect>
-     <x>710</x>
-     <y>450</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
-	border: 1px solid grey;
-	border-radius: 4px;
-	color: white;
-}
-
-QCheckBox::indicator:checked {
-	background: #32a6ff;
-}</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="save_preferences">
+       <property name="text">
+        <string>Save Preferences</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Policy::Preferred</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancel_preferences">
+       <property name="text">
+        <string>Cancel Preferences</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>
