@@ -48,13 +48,16 @@ class BulkConvertManager : public QObject
         void start_doc_job(ConversionJob &job, int job_index);
         void start_ss_job(ConversionJob &job, int job_index);
         void start_archive_job(ConversionJob &job, int job_index);
-        void start();
         void skip_job(int job_index, ConversionStatus status);
+        void start();
         void pause();
         void resume();
-        void cancel();
-        bool is_paused() const;
+        void error_dir_check();
         bool total_success();
+        void generate_log_name();
+        void log_error(QString error);
+        bool log_made();
+        bool is_paused() const;
         int succeeded = 0;
         int job_count = 0;
 
@@ -70,7 +73,10 @@ class BulkConvertManager : public QObject
         int current_index = 0;
         bool paused = false;
         bool cancelled = false;
+        bool error_file_init = false;
         FileType file_type;
+        QFile error_log;
+
 };
 
 QString file_ext(const QString &input_path);

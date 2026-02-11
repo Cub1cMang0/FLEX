@@ -2,6 +2,8 @@
 #include <QDebug>
 #include <QObject>
 #include <QFileInfo>
+#include <QDir>
+#include <QDateTime>
 
 BulkConvertManager::BulkConvertManager(QObject *parent)
     : QObject(parent)
@@ -50,6 +52,18 @@ bool correct_ext(FileType file_type, QString ext)
     }
 }
 
+void BulkConvertManager::generate_log_name()
+{
+    QString time_stamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
+    QString log_name = "error_log_" + time_stamp + ".txt";
+    QString source_location = QString(__FILE__);
+    QFileInfo file_info(source_location);
+    QString error_location = file_info.absolutePath() + "/error_logs";
+    QDir error_dir(error_location);
+    error_log.setFileName(error_dir.absoluteFilePath(log_name));
+    error_file_init = true;
+}
+
 void BulkConvertManager::start()
 {
     paused = false;
@@ -59,6 +73,7 @@ void BulkConvertManager::start()
     {
         emit job_status_updated(i, ConversionStatus::Waiting);
     }
+    error_dir_check();
     process_next();
 }
 
@@ -101,6 +116,18 @@ void BulkConvertManager::set_jobs(QVector<QString> input_files, QString output_e
     job_count = jobs.size();
 }
 
+void BulkConvertManager::error_dir_check()
+{
+    QString source_location = QString(__FILE__);
+    QFileInfo file_info(source_location);
+    QString error_location = file_info.absolutePath() + "/error_logs";
+    QDir error_dir(error_location);
+    if (!error_dir.exists())
+    {
+        error_dir.mkpath(".");
+    }
+}
+
 bool BulkConvertManager::total_success()
 {
     if (succeeded == job_count)
@@ -108,6 +135,25 @@ bool BulkConvertManager::total_success()
         return true;
     }
     return false;
+}
+
+void BulkConvertManager::log_error(QString error)
+{
+    if (!error_file_init)
+    {
+        generate_log_name();
+    }
+    if (error_log.open(QIODevice::Append | QIODevice::Text))
+    {
+        QTextStream output(&error_log);
+        output << error << "\n" << "\n";
+        error_log.close();
+    }
+}
+
+bool BulkConvertManager::log_made()
+{
+    return (error_file_init);
 }
 
 void BulkConvertManager::start_image_job(ConversionJob &job, int job_index)
@@ -127,7 +173,7 @@ void BulkConvertManager::start_image_job(ConversionJob &job, int job_index)
             job.status = ConversionStatus::Failed;
             emit job_status_updated(job_index, ConversionStatus::Failed);
             job.error_message = error.isEmpty() ? "Conversion failed" : error;
-            qDebug() << job.error_message;
+            log_error(job.error_message);
         }
         emit job_updated(job_index);
         current_index++;
@@ -155,6 +201,7 @@ void BulkConvertManager::start_av_job(ConversionJob &job, int job_index)
             job.status = ConversionStatus::Failed;
             emit job_status_updated(job_index, ConversionStatus::Failed);
             job.error_message = error.isEmpty() ? "Conversion failed" : error;
+            log_error(job.error_message);
         }
         emit job_updated(job_index);
         current_index++;
@@ -182,6 +229,7 @@ void BulkConvertManager::start_doc_job(ConversionJob &job, int job_index)
             job.status = ConversionStatus::Failed;
             emit job_status_updated(job_index, ConversionStatus::Failed);
             job.error_message = error.isEmpty() ? "Conversion failed" : error;
+            log_error(job.error_message);
         }
         emit job_updated(job_index);
         current_index++;
@@ -209,6 +257,7 @@ void BulkConvertManager::start_ss_job(ConversionJob &job, int job_index)
             job.status = ConversionStatus::Failed;
             emit job_status_updated(job_index, ConversionStatus::Failed);
             job.error_message = error.isEmpty() ? "Conversion failed" : error;
+            log_error(job.error_message);
         }
         emit job_updated(job_index);
         current_index++;
@@ -236,6 +285,7 @@ void BulkConvertManager::start_archive_job(ConversionJob &job, int job_index)
             job.status = ConversionStatus::Failed;
             emit job_status_updated(job_index, ConversionStatus::Failed);
             job.error_message = error.isEmpty() ? "Conversion failed" : error;
+            log_error(job.error_message);
         }
         emit job_updated(job_index);
         current_index++;
