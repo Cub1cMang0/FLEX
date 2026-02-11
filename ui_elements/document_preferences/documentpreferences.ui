@@ -13,107 +13,44 @@
   <property name="windowTitle">
    <string>Document Preferences</string>
   </property>
-  <widget class="QLabel" name="rm_metadata_label">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>40</y>
-     <width>201</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Remove Metadata:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="line_breaks_label">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>190</y>
-     <width>131</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Line Breaks:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="standalone_label">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>240</y>
-     <width>241</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Standalone Document:</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="preserve_formatting_label">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>90</y>
-     <width>231</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Preserve Formatting: </string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="preserve_media_label">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>140</y>
-     <width>171</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>18</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Preserve Media:</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="rm_metadata_cb">
-   <property name="geometry">
-    <rect>
-     <x>540</x>
-     <y>50</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="rm_metadata_hlayout">
+     <item>
+      <widget class="QLabel" name="rm_metadata_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Remove Metadata:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_6">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="rm_metadata_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
     width: 18px;
     height: 18px;
 	border: 1px solid grey;
@@ -124,22 +61,51 @@
 QCheckBox::indicator:checked {
 	background: #32a6ff;
 }</string>
-   </property>
-   <property name="text">
-    <string>CheckBox</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="preserve_formatting_cb">
-   <property name="geometry">
-    <rect>
-     <x>540</x>
-     <y>100</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="preserve_format_hlayout">
+     <item>
+      <widget class="QLabel" name="preserve_formatting_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Preserve Formatting: </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_5">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="preserve_formatting_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
     width: 18px;
     height: 18px;
 	border: 1px solid grey;
@@ -150,22 +116,51 @@ QCheckBox::indicator:checked {
 QCheckBox::indicator:checked {
 	background: #32a6ff;
 }</string>
-   </property>
-   <property name="text">
-    <string>CheckBox</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="preserve_media_cb">
-   <property name="geometry">
-    <rect>
-     <x>540</x>
-     <y>150</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="preserve_media_hlayout">
+     <item>
+      <widget class="QLabel" name="preserve_media_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Preserve Media:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_4">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="preserve_media_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
     width: 18px;
     height: 18px;
 	border: 1px solid grey;
@@ -176,22 +171,51 @@ QCheckBox::indicator:checked {
 QCheckBox::indicator:checked {
 	background: #32a6ff;
 }</string>
-   </property>
-   <property name="text">
-    <string>CheckBox</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="line_breaks_cb">
-   <property name="geometry">
-    <rect>
-     <x>540</x>
-     <y>200</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="line_breaks_hlayout">
+     <item>
+      <widget class="QLabel" name="line_breaks_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Line Breaks:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="line_breaks_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
     width: 18px;
     height: 18px;
 	border: 1px solid grey;
@@ -202,27 +226,56 @@ QCheckBox::indicator:checked {
 QCheckBox::indicator:checked {
 	background: #32a6ff;
 }</string>
-   </property>
-   <property name="text">
-    <string>CheckBox</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="standalone_cb">
-   <property name="geometry">
-    <rect>
-     <x>540</x>
-     <y>250</y>
-     <width>21</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>9</pointsize>
-    </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QCheckBox::indicator {
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="standalone_hlayout">
+     <item>
+      <widget class="QLabel" name="standalone_label">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Standalone Document:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="standalone_cb">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox::indicator {
     width: 18px;
     height: 18px;
 	border: 1px solid grey;
@@ -233,37 +286,58 @@ QCheckBox::indicator:checked {
 QCheckBox::indicator:checked {
 	background: #32a6ff;
 }</string>
-   </property>
-   <property name="text">
-    <string>CheckBox</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="save_preferences">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>340</y>
-     <width>101</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Save Preferences</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="cancel_preferences">
-   <property name="geometry">
-    <rect>
-     <x>400</x>
-     <y>340</y>
-     <width>111</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Cancel Preferences</string>
-   </property>
-  </widget>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="save_cancel_hlayout">
+     <item>
+      <widget class="QPushButton" name="save_preferences">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Save Preferences</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancel_preferences">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Cancel Preferences</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

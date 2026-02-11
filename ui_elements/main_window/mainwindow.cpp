@@ -177,6 +177,24 @@ void MainWindow::convert_user_image(QString save_folder)
     ui->select_file_images->setEnabled(false);
     ui->convert_button_image->setEnabled(false);
     ui->convert_button_image_save->setEnabled(false);
+    for (int i = 0; i < og_file_paths.size(); ++i)
+    {
+        QString clean_path = og_file_paths[i];
+        int last_space_index = clean_path.lastIndexOf(' ');
+        if (last_space_index != -1)
+        {
+            QString suffix = clean_path.mid(last_space_index + 1);
+            if (suffix == QString::fromUtf8("⌛") ||
+                suffix == QString::fromUtf8("🔄️") ||
+                suffix == QString::fromUtf8("⏭️️") ||
+                suffix == QString::fromUtf8("❌") ||
+                suffix == QString::fromUtf8("✅"))
+            {
+                clean_path = clean_path.left(last_space_index);
+            }
+        }
+        ui->drag_n_drop_area->update_file_path(i, clean_path);
+    }
     bcm = new BulkConvertManager(this);
     bcm->set_file_type(FileType::Image);
     if (save_folder == "Alternate")
@@ -245,13 +263,21 @@ void MainWindow::convert_user_image(QString save_folder)
     {
         ui->image_progress->setValue(100);
         ui->result_box->setReadOnly(false);
+        ui->result_box->clear();
         if (bcm->total_success())
         {
             ui->result_box->setText("Image conversion finished.");
         }
         else
         {
-            ui->result_box->setText(QString("%1 of %2 image conversions succeeded.").arg(bcm->succeeded).arg(bcm->job_count));
+            if (bcm->log_made())
+            {
+                ui->result_box->setText(QString("%1 of %2 image conversions succeeded (error log available).").arg(bcm->succeeded).arg(bcm->job_count));
+            }
+            else
+            {
+                ui->result_box->setText(QString("%1 of %2 image conversions succeeded.").arg(bcm->succeeded).arg(bcm->job_count));
+            }
         }
         ui->result_box->setReadOnly(true);
         QTimer::singleShot(5000, this, [this]() {
@@ -333,6 +359,24 @@ void MainWindow::convert_user_av(QString save_folder)
     ui->select_file_av->setEnabled(false);
     ui->convert_button_av->setEnabled(false);
     ui->convert_button_av_save->setEnabled(false);
+    for (int i = 0; i < og_file_paths.size(); ++i)
+    {
+        QString clean_path = og_file_paths[i];
+        int last_space_index = clean_path.lastIndexOf(' ');
+        if (last_space_index != -1)
+        {
+            QString suffix = clean_path.mid(last_space_index + 1);
+            if (suffix == QString::fromUtf8("⌛") ||
+                suffix == QString::fromUtf8("🔄️") ||
+                suffix == QString::fromUtf8("⏭️️") ||
+                suffix == QString::fromUtf8("❌") ||
+                suffix == QString::fromUtf8("✅"))
+            {
+                clean_path = clean_path.left(last_space_index);
+            }
+        }
+        ui->drag_n_drop_area->update_file_path(i, clean_path);
+    }
     bcm = new BulkConvertManager(this);
     bcm->set_file_type(FileType::AV);
     if (save_folder == "Alternate")
@@ -398,7 +442,22 @@ void MainWindow::convert_user_av(QString save_folder)
     {
         ui->av_progress->setValue(100);
         ui->result_box->setReadOnly(false);
-        ui->result_box->setText("Video/Audio conversion finished.");
+        ui->result_box->clear();
+        if (bcm->total_success())
+        {
+            ui->result_box->setText("Video/Audio conversion finished.");
+        }
+        else
+        {
+            if (bcm->log_made())
+            {
+                ui->result_box->setText(QString("%1 of %2 video/audio conversions succeeded (error log available).").arg(bcm->succeeded).arg(bcm->job_count));
+            }
+            else
+            {
+                ui->result_box->setText(QString("%1 of %2 video/audio conversions succeeded.").arg(bcm->succeeded).arg(bcm->job_count));
+            }
+        }
         ui->result_box->setReadOnly(true);
         QTimer::singleShot(5000, this, [this]() {
             ui->result_box->setReadOnly(false);
@@ -478,6 +537,24 @@ void MainWindow::convert_user_document(QString save_folder)
     ui->select_file_doc->setEnabled(false);
     ui->convert_button_doc->setEnabled(false);
     ui->convert_button_doc_save->setEnabled(false);
+    for (int i = 0; i < og_file_paths.size(); ++i)
+    {
+        QString clean_path = og_file_paths[i];
+        int last_space_index = clean_path.lastIndexOf(' ');
+        if (last_space_index != -1)
+        {
+            QString suffix = clean_path.mid(last_space_index + 1);
+            if (suffix == QString::fromUtf8("⌛") ||
+                suffix == QString::fromUtf8("🔄️") ||
+                suffix == QString::fromUtf8("⏭️️") ||
+                suffix == QString::fromUtf8("❌") ||
+                suffix == QString::fromUtf8("✅"))
+            {
+                clean_path = clean_path.left(last_space_index);
+            }
+        }
+        ui->drag_n_drop_area->update_file_path(i, clean_path);
+    }
     bcm = new BulkConvertManager(this);
     bcm->set_file_type(FileType::Doc);
     if (save_folder == "Alternate")
@@ -543,7 +620,22 @@ void MainWindow::convert_user_document(QString save_folder)
     {
         ui->doc_progress->setValue(100);
         ui->result_box->setReadOnly(false);
-        ui->result_box->setText("Document conversion finished.");
+        ui->result_box->clear();
+        if (bcm->total_success())
+        {
+            ui->result_box->setText("Document conversion finished.");
+        }
+        else
+        {
+            if (bcm->log_made())
+            {
+                ui->result_box->setText(QString("%1 of %2 document conversions succeeded (error log available).").arg(bcm->succeeded).arg(bcm->job_count));
+            }
+            else
+            {
+                ui->result_box->setText(QString("%1 of %2 document conversions succeeded.").arg(bcm->succeeded).arg(bcm->job_count));
+            }
+        }
         ui->result_box->setReadOnly(true);
         QTimer::singleShot(5000, this, [this]() {
             ui->result_box->setReadOnly(false);
@@ -625,6 +717,24 @@ void MainWindow::convert_user_spreadsheet(QString save_folder)
     ui->select_file_ss->setEnabled(false);
     ui->convert_button_spread->setEnabled(false);
     ui->convert_button_spread_save->setEnabled(false);
+    for (int i = 0; i < og_file_paths.size(); ++i)
+    {
+        QString clean_path = og_file_paths[i];
+        int last_space_index = clean_path.lastIndexOf(' ');
+        if (last_space_index != -1)
+        {
+            QString suffix = clean_path.mid(last_space_index + 1);
+            if (suffix == QString::fromUtf8("⌛") ||
+                suffix == QString::fromUtf8("🔄️") ||
+                suffix == QString::fromUtf8("⏭️️") ||
+                suffix == QString::fromUtf8("❌") ||
+                suffix == QString::fromUtf8("✅"))
+            {
+                clean_path = clean_path.left(last_space_index);
+            }
+        }
+        ui->drag_n_drop_area->update_file_path(i, clean_path);
+    }
     bcm = new BulkConvertManager(this);
     bcm->set_file_type(FileType::SS);
     if (save_folder == "Alternate")
@@ -690,7 +800,22 @@ void MainWindow::convert_user_spreadsheet(QString save_folder)
     {
         ui->spread_progress->setValue(100);
         ui->result_box->setReadOnly(false);
-        ui->result_box->setText("Spreadsheet conversion finished.");
+        ui->result_box->clear();
+        if (bcm->total_success())
+        {
+            ui->result_box->setText("Spreadsheet conversion finished.");
+        }
+        else
+        {
+            if (bcm->log_made())
+            {
+                ui->result_box->setText(QString("%1 of %2 spreadsheet conversions succeeded (error log available).").arg(bcm->succeeded).arg(bcm->job_count));
+            }
+            else
+            {
+                ui->result_box->setText(QString("%1 of %2 spreadsheet conversions succeeded.").arg(bcm->succeeded).arg(bcm->job_count));
+            }
+        }
         ui->result_box->setReadOnly(true);
         QTimer::singleShot(5000, this, [this]() {
             ui->result_box->setReadOnly(false);
@@ -770,6 +895,24 @@ void MainWindow::convert_user_archive(QString save_folder)
     ui->select_file_ar->setEnabled(false);
     ui->convert_button_archive->setEnabled(false);
     ui->convert_button_archive_save->setEnabled(false);
+    for (int i = 0; i < og_file_paths.size(); ++i)
+    {
+        QString clean_path = og_file_paths[i];
+        int last_space_index = clean_path.lastIndexOf(' ');
+        if (last_space_index != -1)
+        {
+            QString suffix = clean_path.mid(last_space_index + 1);
+            if (suffix == QString::fromUtf8("⌛") ||
+                suffix == QString::fromUtf8("🔄️") ||
+                suffix == QString::fromUtf8("⏭️️") ||
+                suffix == QString::fromUtf8("❌") ||
+                suffix == QString::fromUtf8("✅"))
+            {
+                clean_path = clean_path.left(last_space_index);
+            }
+        }
+        ui->drag_n_drop_area->update_file_path(i, clean_path);
+    }
     bcm = new BulkConvertManager(this);
     bcm->set_file_type(FileType::Archive);
     if (save_folder == "Alternate")
@@ -835,7 +978,22 @@ void MainWindow::convert_user_archive(QString save_folder)
     {
         ui->archives_progress->setValue(100);
         ui->result_box->setReadOnly(false);
-        ui->result_box->setText("Archive conversion finished.");
+        ui->result_box->clear();
+        if (bcm->total_success())
+        {
+            ui->result_box->setText("Archive conversion finished.");
+        }
+        else
+        {
+            if (bcm->log_made())
+            {
+                ui->result_box->setText(QString("%1 of %2 archive conversions succeeded (error log available).").arg(bcm->succeeded).arg(bcm->job_count));
+            }
+            else
+            {
+                ui->result_box->setText(QString("%1 of %2 archive conversions succeeded.").arg(bcm->succeeded).arg(bcm->job_count));
+            }
+        }
         ui->result_box->setReadOnly(true);
         QTimer::singleShot(5000, this, [this]() {
             ui->result_box->setReadOnly(false);
@@ -966,8 +1124,8 @@ void MainWindow::on_select_file_ss_clicked()
 
 void MainWindow::on_select_file_ar_clicked()
 {
-    QString input_ext = ui->input_type_av->currentText();
-    QString output_ext = ui->output_type_av->currentText();
+    QString input_ext = ui->input_type_archive->currentText();
+    QString output_ext = ui->output_type_archive->currentText();
     QString input_info = input_ext + " Files " + "(*." + input_ext.toLower() + ")";
     QString file_path = QFileDialog::getOpenFileName(NULL, "Open File", "", input_info);
     ui->drag_n_drop_area->clearFiles();
