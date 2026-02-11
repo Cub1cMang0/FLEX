@@ -3,6 +3,7 @@
 #include <fstream>
 #include <QFileDialog>
 #include <QImage>
+#include <QImageReader>
 #include <QImageWriter>
 #include <QPainter>
 
@@ -19,9 +20,18 @@ void MainImageConverter::convert_image(const QString &input_path, const QString 
     QString complete_output = QDir(output_path).filePath(output_name);
     const auto &capabilities = image_capabilities[output_ext.toLower()];
     QImage image;
-    if (!image.load(input_path))
+    QImageReader reader(input_path);
+    if (!reader.canRead())
     {
-        emit update_image_progress("Image could not be loaded.", false);
+        QString error = QString("Image could not be loaded: %1").arg(reader.errorString());
+        emit update_image_progress(error, false);
+        return;
+    }
+    image = reader.read();
+    if (image.isNull())
+    {
+        QString error = QString("Image loading has failed: %1").arg(reader.errorString());
+        emit update_image_progress(error, false);
         return;
     }
     QString source_location = QString(__FILE__);
@@ -36,7 +46,9 @@ void MainImageConverter::convert_image(const QString &input_path, const QString 
         writer.setFormat(output_ext.toLower().toUtf8());
         if (!writer.write(image))
         {
+            qDebug() << "A";
             QString error_msg = QString("Image could not be converted: %1").arg(writer.errorString());
+            qDebug() << error_msg;
             emit update_image_progress(error_msg, false);
             return;
         }
@@ -121,7 +133,9 @@ void MainImageConverter::convert_image(const QString &input_path, const QString 
     }
     if (!writer.write(image))
     {
+        qDebug() << "B";
         QString error_msg = QString("Image could not be converted: %1").arg(writer.errorString());
+        qDebug() << error_msg;
         emit update_image_progress(error_msg, false);
         return;
     }
