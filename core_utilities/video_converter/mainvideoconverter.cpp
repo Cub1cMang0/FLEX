@@ -5,6 +5,7 @@
 #include <QProcess>
 #include <QFileDialog>
 #include <QProgressBar>
+#include <QCoreApplication>
 
 using json = nlohmann::json;
 using namespace std;
@@ -72,19 +73,25 @@ QString set_audio_channel(QString channel)
 
 void MainVideoConverter::convert_video(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
 {
+    if (input_extension == "alac")
+    {
+        input_extension = "m4a";
+    }
+    else if (output_extension == "alac")
+    {
+        output_extension = "m4a";
+    }
     QFileInfo input_file_info(input_path);
     QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
     QString complete_output = QDir(output_path).filePath(output_name);
     QStringList arguments;
     arguments << "-y" << "-i" << input_path << "-progress" << "pipe:1";
     ffmpeg_process = new QProcess(this);
-    ffmpeg_process->setProgram("ffmpeg");
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     ifstream save_json(json_path.toStdString());
     json load_data;
+    ffmpeg_process->setProgram(app_dir + "/tools/ffmpeg.exe");
     if (save_json.is_open())
     {
         save_json >> load_data;

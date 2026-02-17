@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <QtConcurrent/QtConcurrent>
 #include <QTemporaryFile>
+#include <QCoreApplication>
 
 using json = nlohmann::json;
 using namespace std;
@@ -465,18 +466,12 @@ void MainSpreadConverter::xml_to_csv(const QString &xml_file, const QString &csv
 
 void MainSpreadConverter::xml_to_fods(const QString &xml_file, const QString &fods_file, json pref_file)
 {
-    QThreadPool::globalInstance()->start([=]() {
-        QString temp_csv = QDir::temp().filePath(
-            QUuid::createUuid().toString() + ".csv"
-            );
-
+    QThreadPool::globalInstance()->start([=]() {QString temp_csv = QDir::temp().filePath(QUuid::createUuid().toString() + ".csv");
         xml_to_csv(xml_file, temp_csv, pref_file);
-
         if (!QFileInfo::exists(temp_csv)) {
             emit update_ss_progress("CSV generation failed", false);
             return;
         }
-
         csv_to_fods(temp_csv, fods_file, pref_file);
         QFile::remove(temp_csv);
     });
@@ -484,10 +479,8 @@ void MainSpreadConverter::xml_to_fods(const QString &xml_file, const QString &fo
 
 void MainSpreadConverter::find_matching_function(const QString &input_file, const QString &output_file, QString input_extension, QString output_extension)
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     ifstream save_json(json_path.toStdString());
     json load_data;
     if (save_json.is_open())
@@ -505,25 +498,27 @@ void MainSpreadConverter::find_matching_function(const QString &input_file, cons
 
 void MainSpreadConverter::convert_xlsx_or_ods(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString python_path = cpp_directory + "/python" + "/python.exe";
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     QString script;
     if (input_extension == "xlsx" || output_extension == "xlsx") {
-        script = cpp_directory + "/python" + "/xlsx_convert.py";
+        script = app_dir + "/tools/xlsx_convert.exe";
     } else {
-        script = cpp_directory + "/python" + "/ods_convert.py";
+        script = app_dir + "/tools/ods_convert.exe";
     }
     python_process = new QProcess(this);
-    python_process->setProgram(python_path);
+    python_process->setProgram(script);
     QStringList arguments;
-    arguments << script << input_path << output_path;
+    arguments << input_path << output_path;
     if (QFile::exists(json_path))
     {
         arguments << json_path;
     }
+    else
+    {
+        arguments << nullptr;
+    }
+    python_process->setArguments(arguments);
     connect(python_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this, input_path, output_path, input_extension, output_extension]
         (int exitCode, QProcess::ExitStatus status)
     {
@@ -541,24 +536,25 @@ void MainSpreadConverter::convert_xlsx_or_ods(const QString &input_path, const Q
             emit update_ss_progress(result, true);
         }
     });
-    python_process->start(python_path, arguments);
+    python_process->start();
 }
 
 void MainSpreadConverter::convert_fods_to_csv_or_xml(QString &input_path, QString &output_path, QString input_extension, QString output_extension)
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString python_path = cpp_directory + "/python" + "/python.exe";
-    QString json_path = cpp_directory + "/conversion_preferences.json";
-    QString script = cpp_directory + "/python" + "/ods_convert.py";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
+    QString ods_script = app_dir + "/tools/ods_convert.exe";
     QStringList arguments;
     python_process = new QProcess(this);
-    python_process->setProgram(python_path);
-    arguments << script << input_path << output_path;
+    python_process->setProgram(ods_script);
+    arguments << input_path << output_path;
     if (QFile::exists(json_path))
     {
         arguments << json_path;
+    }
+    else
+    {
+        arguments << nullptr;
     }
     connect(python_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this, input_path, output_path, input_extension, output_extension]
         (int exitCode, QProcess::ExitStatus status)

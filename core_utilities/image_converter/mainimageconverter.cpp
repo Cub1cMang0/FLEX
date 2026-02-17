@@ -34,10 +34,8 @@ void MainImageConverter::convert_image(const QString &input_path, const QString 
         emit update_image_progress(error, false);
         return;
     }
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     ifstream save_json(json_path.toStdString());
     int image_quality = -1;
     if (!save_json.is_open())
@@ -46,9 +44,7 @@ void MainImageConverter::convert_image(const QString &input_path, const QString 
         writer.setFormat(output_ext.toLower().toUtf8());
         if (!writer.write(image))
         {
-            qDebug() << "A";
             QString error_msg = QString("Image could not be converted: %1").arg(writer.errorString());
-            qDebug() << error_msg;
             emit update_image_progress(error_msg, false);
             return;
         }

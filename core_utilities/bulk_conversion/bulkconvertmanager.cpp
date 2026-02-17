@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QDateTime>
+#include <QCoreApplication>
 
 BulkConvertManager::BulkConvertManager(QObject *parent)
     : QObject(parent)
@@ -34,10 +35,10 @@ bool correct_ext(FileType file_type, QString ext)
     {
         case FileType::Image:
             return (ext == "png" || ext == "jpeg" || ext == "jpg" || ext == "ico" || ext == "jfif" || ext == "pbm" ||
-                    ext == "pgm" || ext == "ppm" || ext == "bmp" || ext == "cur" || ext == "xmb" || ext == "xpm");
+                    ext == "pgm" || ext == "ppm" || ext == "bmp" || ext == "cur" || ext == "xbm" || ext == "xpm");
         case FileType::AV:
-            return (ext == "mp4" || ext == "mov" || ext == "avi" || ext == "wmv" || ext == "mkv" || ext == "mp3" ||
-                    ext == " wav" || ext == "aiff" || ext == "wma" || ext == "flac" || ext == "alac");
+            return (ext == "mp4" || ext == "mov" || ext == "avi" || ext == "wmv" || ext == "mkv" || ext == "m4v" ||
+                    ext == "mp3" || ext == " wav" || ext == "aiff" || ext == "wma" || ext == "flac" || ext == "alac");
         case FileType::Doc:
             return (ext == "docx" || ext == "epub" || ext == "html" || ext == "json" || ext == "md" || ext == "latex" ||
                     ext == "odt" || ext == "rtf" || ext == "rst" || ext == "org" || ext == "ipynb");
@@ -56,10 +57,12 @@ void BulkConvertManager::generate_log_name()
 {
     QString time_stamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
     QString log_name = "error_log_" + time_stamp + ".txt";
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString error_location = file_info.absolutePath() + "/error_logs";
-    QDir error_dir(error_location);
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QDir error_dir(app_dir + "/error_logs");
+    if (!error_dir.exists())
+    {
+        error_dir.mkpath(".");
+    }
     error_log.setFileName(error_dir.absoluteFilePath(log_name));
     error_file_init = true;
 }
@@ -118,10 +121,12 @@ void BulkConvertManager::set_jobs(QVector<QString> input_files, QString output_e
 
 void BulkConvertManager::error_dir_check()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString error_location = file_info.absolutePath() + "/error_logs";
-    QDir error_dir(error_location);
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QDir error_dir(app_dir + "/error_logs");
+    if (!error_dir.exists())
+    {
+        error_dir.mkpath(".");
+    }
     if (!error_dir.exists())
     {
         error_dir.mkpath(".");

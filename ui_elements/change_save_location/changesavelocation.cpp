@@ -23,10 +23,8 @@ ChangeSaveLocation::~ChangeSaveLocation()
 
 void ChangeSaveLocation::load_save_location()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/save_location.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/save_location.json";
     ifstream save_json(json_path.toStdString());
     json read_data;
     save_json >> read_data;
@@ -48,13 +46,10 @@ void ChangeSaveLocation::on_change_folder_clicked()
     }
 }
 
-
 void ChangeSaveLocation::on_save_button_clicked()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/save_location.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/save_location.json";
     json save_data;
     save_data["location"] = (ui->save_location->toPlainText()).toStdString();
     ofstream file(json_path.toStdString());
@@ -65,7 +60,6 @@ void ChangeSaveLocation::on_save_button_clicked()
         ui->save_button->setEnabled(false);
     }
 }
-
 
 void ChangeSaveLocation::on_cancel_button_clicked()
 {

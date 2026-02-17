@@ -80,10 +80,8 @@ void VideoAudioPreferences::set_tooltips()
 
 void VideoAudioPreferences::load_videoaudio_preferences()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     ifstream save_json(json_path.toStdString());
     if (save_json.is_open())
     {
@@ -139,10 +137,8 @@ void VideoAudioPreferences::check_boxes_states()
 
 void VideoAudioPreferences::on_save_preferences_clicked()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     json preference_data;
     json videoaudio_data;
     ifstream input_file(json_path.toStdString());

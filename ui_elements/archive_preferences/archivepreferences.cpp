@@ -94,10 +94,8 @@ void ArchivePreferences::set_7zip_level_slider(QString level)
 
 void ArchivePreferences::load_archive_preferences()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     ifstream save_json(json_path.toStdString());
     if (save_json.is_open())
     {
@@ -178,10 +176,8 @@ void ArchivePreferences::check_boxes_states()
 
 void ArchivePreferences::on_save_preferences_clicked()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     json preference_data;
     json archive_data;
     ifstream input_file(json_path.toStdString());

@@ -121,15 +121,13 @@ void MainWindow::dnd_label_visibility()
 
 void MainWindow::check_save_location()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/save_location.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/save_location.json";
     if (filesystem::exists(json_path.toStdString()) && filesystem::is_regular_file(json_path.toStdString())) {}
     else
     {
         json save_data;
-        save_data["location"] = cpp_directory.toStdString();
+        save_data["location"] = app_dir.toStdString();
         ofstream file(json_path.toStdString());
         if (file.is_open())
         {
@@ -141,10 +139,8 @@ void MainWindow::check_save_location()
 
 QString load_save_location()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/save_location.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/save_location.json";
     ifstream save_json(json_path.toStdString());
     json read_data;
     save_json >> read_data;
@@ -177,23 +173,26 @@ void MainWindow::convert_user_image(QString save_folder)
     ui->select_file_images->setEnabled(false);
     ui->convert_button_image->setEnabled(false);
     ui->convert_button_image_save->setEnabled(false);
-    for (int i = 0; i < og_file_paths.size(); ++i)
+    if (og_file_paths.size() != 0)
     {
-        QString clean_path = og_file_paths[i];
-        int last_space_index = clean_path.lastIndexOf(' ');
-        if (last_space_index != -1)
+        for (int i = 0; i < og_file_paths.size(); ++i)
         {
-            QString suffix = clean_path.mid(last_space_index + 1);
-            if (suffix == QString::fromUtf8("⌛") ||
-                suffix == QString::fromUtf8("🔄️") ||
-                suffix == QString::fromUtf8("⏭️️") ||
-                suffix == QString::fromUtf8("❌") ||
-                suffix == QString::fromUtf8("✅"))
+            QString clean_path = og_file_paths[i];
+            int last_space_index = clean_path.lastIndexOf(' ');
+            if (last_space_index != -1)
             {
-                clean_path = clean_path.left(last_space_index);
+                QString suffix = clean_path.mid(last_space_index + 1);
+                if (suffix == QString::fromUtf8("⌛") ||
+                    suffix == QString::fromUtf8("🔄️") ||
+                    suffix == QString::fromUtf8("⏭️️") ||
+                    suffix == QString::fromUtf8("❌") ||
+                    suffix == QString::fromUtf8("✅"))
+                {
+                    clean_path = clean_path.left(last_space_index);
+                }
             }
+            ui->drag_n_drop_area->update_file_path(i, clean_path);
         }
-        ui->drag_n_drop_area->update_file_path(i, clean_path);
     }
     bcm = new BulkConvertManager(this);
     bcm->set_file_type(FileType::Image);
@@ -320,11 +319,13 @@ void MainWindow::on_input_type_image_currentTextChanged(const QString &arg1)
     {
         ui->convert_button_image->setEnabled(false);
         ui->convert_button_image_save->setEnabled(false);
+        ui->select_file_images->setEnabled(false);
     }
     else
     {
         ui->convert_button_image->setEnabled(true);
         ui->convert_button_image_save->setEnabled(true);
+        ui->select_file_images->setEnabled(true);
     }
 }
 
@@ -335,11 +336,13 @@ void MainWindow::on_output_type_image_currentTextChanged(const QString &arg1)
     {
         ui->convert_button_image->setEnabled(false);
         ui->convert_button_image_save->setEnabled(false);
+        ui->select_file_images->setEnabled(false);
     }
     else
     {
         ui->convert_button_image->setEnabled(true);
         ui->convert_button_image_save->setEnabled(true);
+        ui->select_file_images->setEnabled(true);
     }
 }
 
@@ -359,23 +362,26 @@ void MainWindow::convert_user_av(QString save_folder)
     ui->select_file_av->setEnabled(false);
     ui->convert_button_av->setEnabled(false);
     ui->convert_button_av_save->setEnabled(false);
-    for (int i = 0; i < og_file_paths.size(); ++i)
+    if (og_file_paths.size() != 0)
     {
-        QString clean_path = og_file_paths[i];
-        int last_space_index = clean_path.lastIndexOf(' ');
-        if (last_space_index != -1)
+        for (int i = 0; i < og_file_paths.size(); ++i)
         {
-            QString suffix = clean_path.mid(last_space_index + 1);
-            if (suffix == QString::fromUtf8("⌛") ||
-                suffix == QString::fromUtf8("🔄️") ||
-                suffix == QString::fromUtf8("⏭️️") ||
-                suffix == QString::fromUtf8("❌") ||
-                suffix == QString::fromUtf8("✅"))
+            QString clean_path = og_file_paths[i];
+            int last_space_index = clean_path.lastIndexOf(' ');
+            if (last_space_index != -1)
             {
-                clean_path = clean_path.left(last_space_index);
+                QString suffix = clean_path.mid(last_space_index + 1);
+                if (suffix == QString::fromUtf8("⌛") ||
+                    suffix == QString::fromUtf8("🔄️") ||
+                    suffix == QString::fromUtf8("⏭️️") ||
+                    suffix == QString::fromUtf8("❌") ||
+                    suffix == QString::fromUtf8("✅"))
+                {
+                    clean_path = clean_path.left(last_space_index);
+                }
             }
+            ui->drag_n_drop_area->update_file_path(i, clean_path);
         }
-        ui->drag_n_drop_area->update_file_path(i, clean_path);
     }
     bcm = new BulkConvertManager(this);
     bcm->set_file_type(FileType::AV);
@@ -498,11 +504,13 @@ void MainWindow::on_input_type_av_currentTextChanged(const QString &arg1)
     {
         ui->convert_button_av->setEnabled(false);
         ui->convert_button_av_save->setEnabled(false);
+        ui->select_file_av->setEnabled(false);
     }
     else
     {
         ui->convert_button_av->setEnabled(true);
         ui->convert_button_av_save->setEnabled(true);
+        ui->select_file_av->setEnabled(true);
     }
 }
 
@@ -513,11 +521,13 @@ void MainWindow::on_output_type_av_currentTextChanged(const QString &arg1)
     {
         ui->convert_button_av->setEnabled(false);
         ui->convert_button_av_save->setEnabled(false);
+        ui->select_file_av->setEnabled(false);
     }
     else
     {
         ui->convert_button_av->setEnabled(true);
         ui->convert_button_av_save->setEnabled(true);
+        ui->select_file_av->setEnabled(true);
     }
 }
 
@@ -537,23 +547,26 @@ void MainWindow::convert_user_document(QString save_folder)
     ui->select_file_doc->setEnabled(false);
     ui->convert_button_doc->setEnabled(false);
     ui->convert_button_doc_save->setEnabled(false);
-    for (int i = 0; i < og_file_paths.size(); ++i)
+    if (og_file_paths.size() != 0)
     {
-        QString clean_path = og_file_paths[i];
-        int last_space_index = clean_path.lastIndexOf(' ');
-        if (last_space_index != -1)
+        for (int i = 0; i < og_file_paths.size(); ++i)
         {
-            QString suffix = clean_path.mid(last_space_index + 1);
-            if (suffix == QString::fromUtf8("⌛") ||
-                suffix == QString::fromUtf8("🔄️") ||
-                suffix == QString::fromUtf8("⏭️️") ||
-                suffix == QString::fromUtf8("❌") ||
-                suffix == QString::fromUtf8("✅"))
+            QString clean_path = og_file_paths[i];
+            int last_space_index = clean_path.lastIndexOf(' ');
+            if (last_space_index != -1)
             {
-                clean_path = clean_path.left(last_space_index);
+                QString suffix = clean_path.mid(last_space_index + 1);
+                if (suffix == QString::fromUtf8("⌛") ||
+                    suffix == QString::fromUtf8("🔄️") ||
+                    suffix == QString::fromUtf8("⏭️️") ||
+                    suffix == QString::fromUtf8("❌") ||
+                    suffix == QString::fromUtf8("✅"))
+                {
+                    clean_path = clean_path.left(last_space_index);
+                }
             }
+            ui->drag_n_drop_area->update_file_path(i, clean_path);
         }
-        ui->drag_n_drop_area->update_file_path(i, clean_path);
     }
     bcm = new BulkConvertManager(this);
     bcm->set_file_type(FileType::Doc);
@@ -677,11 +690,13 @@ void MainWindow::on_input_type_doc_currentTextChanged(const QString &arg1)
     {
         ui->convert_button_doc->setEnabled(false);
         ui->convert_button_doc_save->setEnabled(false);
+        ui->select_file_doc->setEnabled(false);
     }
     else
     {
         ui->convert_button_doc->setEnabled(true);
         ui->convert_button_doc_save->setEnabled(true);
+        ui->select_file_doc->setEnabled(true);
     }
 }
 
@@ -692,11 +707,13 @@ void MainWindow::on_output_type_doc_currentTextChanged(const QString &arg1)
     {
         ui->convert_button_doc->setEnabled(false);
         ui->convert_button_doc_save->setEnabled(false);
+        ui->select_file_doc->setEnabled(false);
     }
     else
     {
         ui->convert_button_doc->setEnabled(true);
         ui->convert_button_doc_save->setEnabled(true);
+        ui->select_file_doc->setEnabled(true);
     }
 }
 
@@ -717,23 +734,26 @@ void MainWindow::convert_user_spreadsheet(QString save_folder)
     ui->select_file_ss->setEnabled(false);
     ui->convert_button_spread->setEnabled(false);
     ui->convert_button_spread_save->setEnabled(false);
-    for (int i = 0; i < og_file_paths.size(); ++i)
+    if (og_file_paths.size() != 0)
     {
-        QString clean_path = og_file_paths[i];
-        int last_space_index = clean_path.lastIndexOf(' ');
-        if (last_space_index != -1)
+        for (int i = 0; i < og_file_paths.size(); ++i)
         {
-            QString suffix = clean_path.mid(last_space_index + 1);
-            if (suffix == QString::fromUtf8("⌛") ||
-                suffix == QString::fromUtf8("🔄️") ||
-                suffix == QString::fromUtf8("⏭️️") ||
-                suffix == QString::fromUtf8("❌") ||
-                suffix == QString::fromUtf8("✅"))
+            QString clean_path = og_file_paths[i];
+            int last_space_index = clean_path.lastIndexOf(' ');
+            if (last_space_index != -1)
             {
-                clean_path = clean_path.left(last_space_index);
+                QString suffix = clean_path.mid(last_space_index + 1);
+                if (suffix == QString::fromUtf8("⌛") ||
+                    suffix == QString::fromUtf8("🔄️") ||
+                    suffix == QString::fromUtf8("⏭️️") ||
+                    suffix == QString::fromUtf8("❌") ||
+                    suffix == QString::fromUtf8("✅"))
+                {
+                    clean_path = clean_path.left(last_space_index);
+                }
             }
+            ui->drag_n_drop_area->update_file_path(i, clean_path);
         }
-        ui->drag_n_drop_area->update_file_path(i, clean_path);
     }
     bcm = new BulkConvertManager(this);
     bcm->set_file_type(FileType::SS);
@@ -856,11 +876,13 @@ void MainWindow::on_input_type_spread_currentTextChanged(const QString &arg1)
     {
         ui->convert_button_spread->setEnabled(false);
         ui->convert_button_spread_save->setEnabled(false);
+        ui->select_file_ss->setEnabled(false);
     }
     else
     {
         ui->convert_button_spread->setEnabled(true);
         ui->convert_button_spread_save->setEnabled(true);
+        ui->select_file_ss->setEnabled(true);
     }
 }
 
@@ -871,11 +893,13 @@ void MainWindow::on_output_type_spread_currentTextChanged(const QString &arg1)
     {
         ui->convert_button_spread->setEnabled(false);
         ui->convert_button_spread_save->setEnabled(false);
+        ui->select_file_ss->setEnabled(false);
     }
     else
     {
         ui->convert_button_spread->setEnabled(true);
         ui->convert_button_spread_save->setEnabled(true);
+        ui->select_file_ss->setEnabled(true);
     }
 }
 
@@ -895,23 +919,26 @@ void MainWindow::convert_user_archive(QString save_folder)
     ui->select_file_ar->setEnabled(false);
     ui->convert_button_archive->setEnabled(false);
     ui->convert_button_archive_save->setEnabled(false);
-    for (int i = 0; i < og_file_paths.size(); ++i)
+    if (og_file_paths.size() != 0)
     {
-        QString clean_path = og_file_paths[i];
-        int last_space_index = clean_path.lastIndexOf(' ');
-        if (last_space_index != -1)
+        for (int i = 0; i < og_file_paths.size(); ++i)
         {
-            QString suffix = clean_path.mid(last_space_index + 1);
-            if (suffix == QString::fromUtf8("⌛") ||
-                suffix == QString::fromUtf8("🔄️") ||
-                suffix == QString::fromUtf8("⏭️️") ||
-                suffix == QString::fromUtf8("❌") ||
-                suffix == QString::fromUtf8("✅"))
+            QString clean_path = og_file_paths[i];
+            int last_space_index = clean_path.lastIndexOf(' ');
+            if (last_space_index != -1)
             {
-                clean_path = clean_path.left(last_space_index);
+                QString suffix = clean_path.mid(last_space_index + 1);
+                if (suffix == QString::fromUtf8("⌛") ||
+                    suffix == QString::fromUtf8("🔄️") ||
+                    suffix == QString::fromUtf8("⏭️️") ||
+                    suffix == QString::fromUtf8("❌") ||
+                    suffix == QString::fromUtf8("✅"))
+                {
+                    clean_path = clean_path.left(last_space_index);
+                }
             }
+            ui->drag_n_drop_area->update_file_path(i, clean_path);
         }
-        ui->drag_n_drop_area->update_file_path(i, clean_path);
     }
     bcm = new BulkConvertManager(this);
     bcm->set_file_type(FileType::Archive);
@@ -1036,11 +1063,13 @@ void MainWindow::on_input_type_archive_currentTextChanged(const QString &arg1)
     {
         ui->convert_button_archive->setEnabled(false);
         ui->convert_button_archive_save->setEnabled(false);
+        ui->select_file_ar->setEnabled(false);
     }
     else
     {
         ui->convert_button_archive->setEnabled(true);
         ui->convert_button_archive_save->setEnabled(true);
+        ui->select_file_ar->setEnabled(true);
     }
 }
 
@@ -1051,11 +1080,13 @@ void MainWindow::on_output_type_archive_currentTextChanged(const QString &arg1)
     {
         ui->convert_button_archive->setEnabled(false);
         ui->convert_button_archive_save->setEnabled(false);
+        ui->select_file_ar->setEnabled(false);
     }
     else
     {
         ui->convert_button_archive->setEnabled(true);
         ui->convert_button_archive_save->setEnabled(true);
+        ui->select_file_ar->setEnabled(true);
     }
 }
 
@@ -1072,6 +1103,7 @@ void MainWindow::on_select_file_images_clicked()
         ui->drag_n_drop_area->clearFiles();
         ui->drag_n_drop_area->addFile(file_path);
     }
+    og_file_paths.clear();
 }
 
 void MainWindow::on_select_file_av_clicked()
@@ -1087,6 +1119,7 @@ void MainWindow::on_select_file_av_clicked()
         ui->drag_n_drop_area->clearFiles();
         ui->drag_n_drop_area->addFile(file_path);
     }
+    og_file_paths.clear();
 }
 
 
@@ -1103,6 +1136,7 @@ void MainWindow::on_select_file_doc_clicked()
         ui->drag_n_drop_area->clearFiles();
         ui->drag_n_drop_area->addFile(file_path);
     }
+    og_file_paths.clear();
 }
 
 
@@ -1119,6 +1153,7 @@ void MainWindow::on_select_file_ss_clicked()
         ui->drag_n_drop_area->clearFiles();
         ui->drag_n_drop_area->addFile(file_path);
     }
+    og_file_paths.clear();
 }
 
 
@@ -1135,6 +1170,7 @@ void MainWindow::on_select_file_ar_clicked()
         ui->drag_n_drop_area->clearFiles();
         ui->drag_n_drop_area->addFile(file_path);
     }
+    og_file_paths.clear();
 }
 
 
@@ -1170,6 +1206,7 @@ void MainWindow::on_clear_conversion_clicked()
         bcm = nullptr;
     }
     ui->drag_n_drop_area->clearFiles();
+    og_file_paths.clear();
     ui->drag_n_drop_text->show();
     int file_type_index = ui->file_sections->currentIndex();
     switch (file_type_index)

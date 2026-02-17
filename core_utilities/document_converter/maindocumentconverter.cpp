@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QWidget>
 #include <QTemporaryFile>
+#include <QCoreApplication>
 #include <QMessageBox>
 #include <sstream>
 #include <fstream>
@@ -107,12 +108,10 @@ void MainDocumentConverter::convert_document(const QString &input_path, const QS
     arguments << actual_input_path << "-o" << complete_output;
     QString temp_ref_path;
     pandoc = new QProcess(this);
-    pandoc->setProgram("pandoc");
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     ifstream save_json(json_path.toStdString());
+    pandoc->setProgram(app_dir + "/tools/pandoc.exe");
     json load_data;
     if (save_json.is_open())
     {

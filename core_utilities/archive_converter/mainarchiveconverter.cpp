@@ -5,6 +5,7 @@
 #include <fstream>
 #include <QFileDialog>
 #include <QDebug>
+#include <QCoreApplication>
 #include "json.hpp"
 
 MainArchiveConverter::MainArchiveConverter(QObject *parent)
@@ -233,9 +234,8 @@ void MainArchiveConverter::convert_archive(const QString &input_path, const QStr
         archive_write_free(output_file);
         return;
     }
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString json_path = file_info.absolutePath() + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     json load_data;
     std::ifstream save_json(json_path.toStdString());
     if (save_json.is_open()) {

@@ -46,10 +46,8 @@ void ImagePreferences::fetch_base_preferences()
 
 void ImagePreferences::load_image_preferences()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     ifstream save_json(json_path.toStdString());
     if (!save_json.is_open())
     {
@@ -129,10 +127,8 @@ void ImagePreferences::on_quality_cb_stateChanged(int state)
 
 void ImagePreferences::on_save_image_preferences_clicked()
 {
-    QString source_location = QString(__FILE__);
-    QFileInfo file_info(source_location);
-    QString cpp_directory = file_info.absolutePath();
-    QString json_path = cpp_directory + "/conversion_preferences.json";
+    QString app_dir = QCoreApplication::applicationDirPath();
+    QString json_path = app_dir + "/conversion_preferences.json";
     json preference_data;
     json image_data;
     ifstream input_file(json_path.toStdString());
