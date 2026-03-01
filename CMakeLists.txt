@@ -140,6 +140,8 @@ endif()
 
 # ── Tools (ffmpeg, pandoc) ────────────────────────────────────────────────────
 
+# ── Tools (ffmpeg, pandoc) ────────────────────────────────────────────────────
+
 if(WIN32)
     set(TOOLS_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tools/win64")
     set(TOOLS_DEST_SUBDIR "tools/win64")
@@ -151,12 +153,16 @@ else()
     set(TOOLS_DEST_SUBDIR "tools/linux")
 endif()
 
-add_custom_command(TARGET FLEX POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${TOOLS_SRC_DIR}"
-        "$<TARGET_FILE_DIR:FLEX>/${TOOLS_DEST_SUBDIR}"
-    COMMENT "Copying tools to output directory"
-)
+if(EXISTS "${TOOLS_SRC_DIR}")
+    add_custom_command(TARGET FLEX POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${TOOLS_SRC_DIR}"
+            "$<TARGET_FILE_DIR:FLEX>/${TOOLS_DEST_SUBDIR}"
+        COMMENT "Copying tools to output directory"
+    )
+else()
+    message(STATUS "Tools directory not found at ${TOOLS_SRC_DIR}, skipping copy")
+endif()
 
 # ── Linking ───────────────────────────────────────────────────────────────────
 
