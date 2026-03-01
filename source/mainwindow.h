@@ -1,0 +1,120 @@
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
+#include <QMainWindow>
+#include <bulkconvertmanager.h>
+
+QT_BEGIN_NAMESPACE
+namespace Ui {
+class MainWindow;
+}
+QT_END_NAMESPACE
+
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+public:
+    MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
+
+private slots:
+    void change_image_preferences();
+
+    void change_videoaudio_preferences();
+
+    void change_document_preferences();
+
+    void change_spreadsheet_preferences();
+
+    void change_archive_preferences();
+
+    void convert_user_image(QString save_folder);
+
+    void on_convert_button_image_clicked();
+
+    void on_convert_button_image_save_clicked();
+
+    void on_input_type_image_currentTextChanged(const QString &arg1);
+
+    void on_output_type_image_currentTextChanged(const QString &arg1);
+
+    void convert_user_av(QString save_folder);
+
+    void on_convert_button_av_clicked();
+
+    void on_convert_button_av_save_clicked();
+
+    void on_input_type_av_currentTextChanged(const QString &arg1);
+
+    void on_output_type_av_currentTextChanged(const QString &arg1);
+
+    void convert_user_document(QString save_folder);
+
+    void on_convert_button_doc_clicked();
+
+    void on_convert_button_doc_save_clicked();
+
+    void on_input_type_doc_currentTextChanged(const QString &arg1);
+
+    void on_output_type_doc_currentTextChanged(const QString &arg1);
+
+    void convert_user_archive(QString save_folder);
+
+    void on_convert_button_archive_clicked();
+
+    void on_convert_button_archive_save_clicked();
+
+    void on_input_type_archive_currentTextChanged(const QString &arg1);
+
+    void on_output_type_archive_currentTextChanged(const QString &arg1);
+
+    void convert_user_spreadsheet(QString save_folder);
+
+    void on_convert_button_spread_clicked();
+
+    void on_convert_button_spread_save_clicked();
+
+    void on_input_type_spread_currentTextChanged(const QString &arg1);
+
+    void on_output_type_spread_currentTextChanged(const QString &arg1);
+
+    void exit_program();
+
+    void open_save_location();
+
+    void open_error_location();
+
+    void change_save_folder();
+
+    void check_save_location();
+
+    void setup_progress_bars();
+
+    void on_clear_conversion_clicked();
+
+    void on_select_file_images_clicked();
+
+    void on_select_file_av_clicked();
+
+    void on_select_file_doc_clicked();
+
+    void on_select_file_ss_clicked();
+
+    void on_select_file_ar_clicked();
+
+    void on_pause_conversion_clicked();
+
+    void on_continue_conversion_clicked();
+
+    void dnd_label_visibility();
+
+private:
+    Ui::MainWindow *ui;
+
+    BulkConvertManager *bcm = nullptr;
+
+    QVector<QString> og_file_paths;
+    \
+};
+#endif // MAINWINDOW_H

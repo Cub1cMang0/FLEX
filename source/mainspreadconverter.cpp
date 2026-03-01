@@ -1,0 +1,608 @@
+#include "mainspreadconverter.h"
+#include <QFileDialog>
+#include <QDir>
+#include <QProcess>
+#include <QString>
+#include <QFile>
+#include <QTextStream>
+#include <QDebug>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
+#include <functional>
+#include <fstream>
+#include "json.hpp"
+#include <algorithm>
+#include <QtConcurrent/QtConcurrent>
+#include <QTemporaryFile>
+#include <QCoreApplication>
+
+using json = nlohmann::json;
+using namespace std;
+
+MainSpreadConverter::MainSpreadConverter(QObject *parent)
+    : QObject(parent)
+{}
+
+// Uses in order to check if the files that are going to be converted need the python program to convert it
+bool check_python_need(QString ext_1, QString ext_2)
+{
+    if (ext_1 == "xlsx" || ext_2 == "xlsx" || ext_1 == "ods" || ext_2 == "ods")
+    {
+        return true;
+    }
+    return false;
+}
+
+QChar detect_delim(const QString &path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return ',';
+    }
+    QString sample = file.read(8192);
+    QList<QChar> candidates = {',', ';', '\t', '|', '\\', '/', ':', ' '};
+    QChar best_choice = ',';
+    int best_score = 0;
+    for (QChar c : candidates)
+    {
+        int count = sample.count(c);
+        if (count > best_score)
+        {
+            best_score = count;
+            best_choice = c;
+        }
+    }
+    return best_choice;
+}
+
+void MainSpreadConverter::csv_to_fods(const QString &csv_file, const QString &fods_file, json pref_file)
+{
+    bool success = false;
+    bool rm_empty_rc = false;
+    if (pref_file != nullptr)
+    {
+        if (pref_file.contains("spreadsheet") && pref_file["spreadsheet"].contains("rm_empty_rc"))
+        {
+            rm_empty_rc = pref_file["spreadsheet"]["rm_empty_rc"][0].get<bool>();
+        }
+    }
+    QFile csv(csv_file);
+    if (!csv.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        emit update_ss_progress("Failed to open CSV file", false);
+        return;
+    }
+    QTextStream in(&csv);
+    QChar detected_delim = detect_delim(csv_file);
+    QVector<QStringList> table;
+    while (!in.atEnd())
+    {
+        QString line = in.readLine();
+        QStringList cells = line.split(detected_delim);
+        for (QString &c : cells)
+        {
+            c = c.trimmed();
+        }
+        table.push_back(cells);
+    }
+    csv.close();
+    if (rm_empty_rc)
+    {
+        table.erase(
+            remove_if(table.begin(), table.end(),
+                [](const QStringList &row)
+                {
+                    for (const QString &c : row)
+                    {
+                        if (!c.isEmpty()) {return false;}
+                    }
+                    return true;
+                }),
+            table.end()
+        );
+    }
+    if (rm_empty_rc && !table.isEmpty())
+    {
+        int max_cols = 0;
+        for (const auto &row : table)
+        {
+            max_cols = max(max_cols, static_cast<int>(row.size()));
+        }
+        QVector<bool> col_has_data(max_cols, false);
+        for (const auto &row : table)
+        {
+            for (int i = 0; i < row.size(); ++i)
+            {
+                if (!row[i].isEmpty())
+                {
+                    col_has_data[i] = true;
+                }
+            }
+        }
+        for (auto &row : table)
+        {
+            QStringList new_row;
+            for (int i = 0; i < row.size(); ++i)
+            {
+                if (col_has_data[i])
+                {
+                    new_row.push_back(row[i]);
+                }
+            }
+            row = new_row;
+        }
+    }
+    QFile output_file(fods_file);
+    if (!output_file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        csv.close();
+        emit update_ss_progress("Failed to open FODS file", false);
+        return;
+    }
+    QXmlStreamWriter w(&output_file);
+    w.setAutoFormatting(true);
+    w.writeStartDocument();
+    w.writeStartElement("office:document");
+    w.writeAttribute("xmlns:office", "urn:oasis:names:tc:opendocument:xmlns:office:1.0");
+    w.writeAttribute("xmlns:table", "urn:oasis:names:tc:opendocument:xmlns:table:1.0");
+    w.writeAttribute("xmlns:text", "urn:oasis:names:tc:opendocument:xmlns:text:1.0");
+    w.writeAttribute("office:version", "1.3");
+    w.writeAttribute("office:mimetype", "application/vnd.oasis.opendocument.spreadsheet");
+    w.writeStartElement("office:body");
+    w.writeStartElement("office:spreadsheet");
+    w.writeStartElement("table:table");
+    w.writeAttribute("table:name", "Sheet1");
+    if (w.hasError())
+    {
+        QString errorMsg = "Failed to write XML";
+        if (w.device())
+        {
+            QString deviceError = w.device()->errorString();
+            if (!deviceError.isEmpty())
+            {
+                errorMsg += ": " + deviceError;
+            }
+        }
+        emit update_ss_progress(errorMsg, false);
+        return;
+    }
+    for (const auto &row : table)
+    {
+        w.writeStartElement("table:table-row");
+        for (const QString &c : row)
+        {
+            w.writeStartElement("table:table-cell");
+            w.writeAttribute("office:value-type", "string");
+            w.writeStartElement("text:p");
+            w.writeCharacters(c);
+            w.writeEndElement();
+            w.writeEndElement();
+        }
+        w.writeEndElement();
+    }
+    w.writeEndElement();
+    w.writeEndElement();
+    w.writeEndElement();
+    w.writeEndElement();
+    w.writeEndDocument();
+    output_file.close();
+    if (w.hasError())
+    {
+        QString errorMsg = "Failed to write XML";
+        if (w.device())
+        {
+            QString deviceError = w.device()->errorString();
+            if (!deviceError.isEmpty())
+            {
+                errorMsg += ": " + deviceError;
+            }
+        }
+        emit update_ss_progress(errorMsg, false);
+        return;
+    }
+    QFileInfo input_file_info(csv_file);
+    QString output_name = input_file_info.completeBaseName() + ".fods";
+    QString result = QString("Success: %1.%2 has been converted to %3")
+        .arg(input_file_info.completeBaseName(), "csv", output_name);
+    emit update_ss_progress(result, true);
+}
+
+void MainSpreadConverter::csv_to_xml(const QString &csv_file, const QString &xml_file, json pref_file)
+{
+    bool pretty_print = false;
+    if (pref_file != nullptr)
+    {
+        if (pref_file.contains("spreadsheet") && pref_file["spreadsheet"].contains("pretty_print"))
+        {
+            pretty_print = pref_file["spreadsheet"]["pretty_print"][0].get<bool>();
+        }
+    }
+    QFile csv(csv_file);
+    if (!csv.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        emit update_ss_progress("Failed to open CSV file", false);
+        return;
+    }
+    QFile output_file(xml_file);
+    if (!output_file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        csv.close();
+        emit update_ss_progress("Failed to create XML file", false);
+        return;
+    }
+    QChar detected_delim = detect_delim(csv_file);
+    QXmlStreamWriter writer(&output_file);
+    writer.setAutoFormatting(true);
+    if (pretty_print)
+    {
+        writer.setAutoFormattingIndent(4);
+    }
+    writer.writeStartDocument();
+    writer.writeStartElement("sheet");
+    QTextStream stream(&csv);
+    while (!stream.atEnd())
+    {
+        QString line = stream.readLine();
+        QStringList cells = line.split(detected_delim);
+        writer.writeStartElement("row");
+        foreach (const QString &cell, cells)
+        {
+            writer.writeTextElement("cell", cell.trimmed());
+        }
+        writer.writeEndElement();
+    }
+    writer.writeEndElement();
+    writer.writeEndDocument();
+    csv.close();
+    output_file.close();
+    QFileInfo input_file_info(csv_file);
+    QString output_name = input_file_info.completeBaseName() + ".xml";
+    QString result = QString("Success: %1.%2 has been converted to %3")
+        .arg(input_file_info.completeBaseName(), "csv", output_name);
+    emit update_ss_progress(result, true);
+}
+
+void MainSpreadConverter::xml_to_csv(const QString &xml_file, const QString &csv_file, json pref_file)
+{
+    bool success = false;
+    QChar delim_choice = ',';
+    if (pref_file != nullptr)
+    {
+        if (pref_file.contains("spreadsheet") && pref_file["spreadsheet"].contains("delimiter"))
+        {
+            if (pref_file["spreadsheet"]["delimiter"][0].get<bool>())
+            {
+                delim_choice = pref_file["spreadsheet"]["delimiter"][1].get<char>();
+            }
+        }
+    }
+    QFile file(xml_file);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        emit update_ss_progress("Failed to open XML file", false);
+        return;
+    }
+    QByteArray xml_content = file.readAll();
+    file.close();
+    QFile output_file(csv_file);
+    if (!output_file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        emit update_ss_progress("Failed to create CSV file", false);
+        return;
+    }
+    QXmlStreamReader reader(xml_content);
+    QTextStream out(&output_file);
+    std::function<QMap<QString, QString>(QXmlStreamReader&, const QString&, int)> flatten_element;
+    flatten_element = [&flatten_element](QXmlStreamReader &r, const QString &parent_key, int depth) -> QMap<QString, QString>
+    {
+        QMap<QString, QString> result;
+        if (depth > 50)
+        {
+            qDebug() << "Max recursion depth reached";
+            return result;
+        }
+        while (!r.atEnd())
+        {
+            QXmlStreamReader::TokenType token = r.readNext();
+            if (r.hasError())
+            {
+                qDebug() << "Error during flatten:" << r.errorString();
+                return result;
+            }
+            if (token == QXmlStreamReader::StartElement)
+            {
+                QString elem_name = r.name().toString();
+                QString new_key = parent_key.isEmpty() ? elem_name : parent_key + "_" + elem_name;
+                QXmlStreamAttributes attrs = r.attributes();
+                foreach (const auto &attr, attrs)
+                {
+                    QString attr_key = new_key + "@" + attr.name().toString();
+                    result[attr_key] = attr.value().toString();
+                }
+                QString text = r.readElementText(QXmlStreamReader::IncludeChildElements).trimmed();
+                QXmlStreamReader temp_reader(QString("<%1>%2</%1>").arg(elem_name, text));
+                temp_reader.readNext();
+                temp_reader.readNext();
+                QString content = temp_reader.readElementText();
+
+                if (content == text)
+                {
+                    result[new_key] = text;
+                }
+                else
+                {
+                    QXmlStreamReader nested_reader(QString("<%1>%2</%1>").arg(elem_name, text));
+                    nested_reader.readNext();
+                    nested_reader.readNext();
+                    auto nested_result = flatten_element(nested_reader, new_key, depth + 1);
+                    for (auto it = nested_result.begin(); it != nested_result.end(); ++it)
+                    {
+                        result[it.key()] = it.value();
+                    }
+                }
+            }
+            else if (token == QXmlStreamReader::EndElement)
+            {
+                break;
+            }
+        }
+        return result;
+    };
+    QMap<QString, int> element_counts;
+    QMap<QString, int> element_depths;
+    QMap<QString, bool> has_children;
+    QXmlStreamReader counter(xml_content);
+    int depth = 0;
+    QString last_parent;
+    while (!counter.atEnd())
+    {
+        counter.readNext();
+        if (counter.isStartElement())
+        {
+            QString elem = counter.name().toString();
+            element_counts[elem]++;
+            element_depths[elem] = depth;
+
+            if (!last_parent.isEmpty())
+            {
+                has_children[last_parent] = true;
+            }
+
+            last_parent = elem;
+            depth++;
+        }
+        else if (counter.isEndElement())
+        {
+            depth--;
+        }
+    }
+    QString row_element;
+    int max_count = 0;
+    int best_depth = 999;
+    for (auto it = element_counts.begin(); it != element_counts.end(); ++it)
+    {
+        QString elem = it.key();
+        int count = it.value();
+        if (count > 1 && has_children.value(elem, false))
+        {
+            int elem_depth = element_depths[elem];
+            if (count > max_count || (count == max_count && elem_depth < best_depth))
+            {
+                max_count = count;
+                row_element = elem;
+                best_depth = elem_depth;
+            }
+        }
+    }
+    QList<QMap<QString, QString>> all_rows;
+    QSet<QString> all_headers;
+    reader.clear();
+    reader.addData(xml_content);
+    QXmlStreamReader header_reader(xml_content);
+    while (!header_reader.atEnd())
+    {
+        header_reader.readNext();
+        if (header_reader.isStartElement() && header_reader.name().toString() == row_element)
+        {
+            QMap<QString, QString> row_data = flatten_element(header_reader, "", 0);
+            for (const QString &key : row_data.keys())
+            {
+                all_headers.insert(key);
+            }
+        }
+    }
+    while (!reader.atEnd())
+    {
+        reader.readNext();
+        if (reader.hasError())
+        {
+            QString result = "XML Parse Error: " + reader.errorString();
+            output_file.close();
+            emit update_ss_progress(result, false);
+            return;
+        }
+        if (reader.isStartElement() && reader.name().toString() == row_element)
+        {
+            QMap<QString, QString> row_data = flatten_element(reader, "", 0);
+            all_rows << row_data;
+        }
+    }
+    QStringList headers = all_headers.values();
+    std::sort(headers.begin(), headers.end());
+    if (!headers.isEmpty())
+    {
+        out << headers.join(delim_choice) << "\n";
+    }
+    for (const auto &row : as_const(all_rows))
+    {
+        QStringList row_values;
+        for (const QString &header : as_const(headers))
+        {
+            QString value = row.value(header, "");
+            if (value.contains(delim_choice) || value.contains('"') || value.contains('\n'))
+            {
+                value.replace("\"", "\"\"");
+                value = "\"" + value + "\"";
+            }
+            row_values << value;
+        }
+        out << row_values.join(delim_choice) << "\n";
+    }
+    output_file.close();
+    success = (all_rows.size() > 0);
+    if (success)
+    {
+        QFileInfo input_file_info(xml_file);
+        QString result = "Success: " + input_file_info.completeBaseName() + ".xml" +
+                " has been converted to " + input_file_info.completeBaseName() + ".csv";
+        emit update_ss_progress(result, true);
+    }
+    else
+    {
+        emit update_ss_progress("XML file could not be converted", false);
+    }
+}
+
+void MainSpreadConverter::xml_to_fods(const QString &xml_file, const QString &fods_file, json pref_file)
+{
+    QThreadPool::globalInstance()->start([=]() {QString temp_csv = QDir::temp().filePath(QUuid::createUuid().toString() + ".csv");
+        xml_to_csv(xml_file, temp_csv, pref_file);
+        if (!QFileInfo::exists(temp_csv)) {
+            emit update_ss_progress("CSV generation failed", false);
+            return;
+        }
+        csv_to_fods(temp_csv, fods_file, pref_file);
+        QFile::remove(temp_csv);
+    });
+}
+
+void MainSpreadConverter::find_matching_function(const QString &input_file, const QString &output_file, QString input_extension, QString output_extension)
+{
+    QString config_dir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    QString json_path = config_dir + "/conversion_preferences.json";
+    ifstream save_json(json_path.toStdString());
+    json load_data;
+    if (save_json.is_open())
+    {
+        save_json >> load_data;
+        save_json.close();
+    }
+    if (input_extension == "csv" && output_extension == "fods") {csv_to_fods(input_file, output_file, load_data);}
+    else if (input_extension == "xml" && output_extension == "fods") {xml_to_fods(input_file, output_file, load_data);}
+    else if (input_extension == "csv" && output_extension == "xml") {csv_to_xml(input_file, output_file, load_data);}
+    else if (input_extension == "xml" && output_extension == "csv") {xml_to_csv(input_file, output_file, load_data);}
+    else if (input_extension == "xlsx" || output_extension == "xlsx" || input_extension == "ods" || output_extension == "ods")
+    {convert_xlsx_or_ods(input_file, output_file, input_extension, output_extension);}
+}
+
+void MainSpreadConverter::convert_xlsx_or_ods(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
+{
+    QString config_dir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    QString json_path = config_dir + "/conversion_preferences.json";
+    QString script = QCoreApplication::applicationDirPath();
+    if (input_extension == "xlsx" || output_extension == "xlsx")
+    {
+        #ifdef Q_OS_WIN
+                script = script + "/tools/win64/xlsx_convert.exe";
+        #elif defined(Q_OS_MACOS)
+                scrip = script + "/../Resources/tools/xlsx_convert";
+        #else
+                script = script + "/tools/linux/xlsx_convert";
+        #endif
+    }
+    else
+    {
+        #ifdef Q_OS_WIN
+                script = script + "/tools/ods_convert.exe";
+        #elif defined(Q_OS_MACOS)
+                scrip = script + "/../Resources/tools/ods_convert";
+        #else
+                script = script + "/tools/linux/ods_convert";
+        #endif
+    }
+    python_process = new QProcess(this);
+    python_process->setProgram(script);
+    QStringList arguments;
+    arguments << input_path << output_path;
+    if (QFile::exists(json_path))
+    {
+        arguments << json_path;
+    }
+    else
+    {
+        arguments << nullptr;
+    }
+    python_process->setArguments(arguments);
+    connect(python_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this, input_path, output_path, input_extension, output_extension]
+        (int exitCode, QProcess::ExitStatus status)
+    {
+        QString result;
+        if (status != QProcess::NormalExit || exitCode != 0)
+        {
+            result = QString::fromUtf8(python_process->readAllStandardError());
+            emit update_ss_progress(result, false);
+        }
+        else
+        {
+            QFileInfo input_file_info(input_path);
+            result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() +
+                            " has been converted to " + input_file_info.completeBaseName() + '.' + output_extension.toLower();
+            emit update_ss_progress(result, true);
+        }
+    });
+    python_process->start();
+}
+
+void MainSpreadConverter::convert_fods_to_csv_or_xml(QString &input_path, QString &output_path, QString input_extension, QString output_extension)
+{
+    QString config_dir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    QString json_path = config_dir + "/conversion_preferences.json";
+    QString ods_script = QCoreApplication::applicationDirPath();
+    #ifdef Q_OS_WIN
+            ods_script = ods_script + "/tools/win64/ods_convert.exe";
+    #elif defined(Q_OS_MACOS)
+            ods_script = ods_script + "/../Resources/tools/ods_convert";
+    #else
+            ods_script = ods_script + "/tools/linux/ods_convert";
+    #endif
+    QStringList arguments;
+    python_process = new QProcess(this);
+    python_process->setProgram(ods_script);
+    arguments << input_path << output_path;
+    if (QFile::exists(json_path))
+    {
+        arguments << json_path;
+    }
+    else
+    {
+        arguments << nullptr;
+    }
+    connect(python_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this, input_path, output_path, input_extension, output_extension]
+        (int exitCode, QProcess::ExitStatus status)
+    {
+        QString result;
+        if (status != QProcess::NormalExit || exitCode != 0)
+        {
+            result = QString::fromUtf8(python_process->readAllStandardError());
+            emit update_ss_progress(result, false);
+        }
+        else
+        {
+            QFileInfo input_file_info(input_path);
+            result = "Success: " + input_file_info.completeBaseName() + '.' + input_extension.toLower() +
+                            " has been converted to " + input_file_info.completeBaseName() + '.' + output_extension.toLower();
+            emit update_ss_progress(result, true);
+        }
+    });
+    python_process->setArguments(arguments);
+    python_process->start();
+}
+
+void MainSpreadConverter::convert_spread(const QString &input_path, const QString &output_path, QString input_extension, QString output_extension)
+{
+    QFileInfo input_file_info(input_path);
+    QString output_name = input_file_info.completeBaseName() + "." + output_extension.toLower();
+    QString complete_output = QDir(output_path).filePath(output_name);
+    find_matching_function(input_path, complete_output, input_extension, output_extension);
+}
