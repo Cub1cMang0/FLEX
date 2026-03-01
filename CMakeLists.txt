@@ -102,24 +102,40 @@ elseif(APPLE)
     )
 
 else() # Linux
-    set(LIBARCHIVE_SO "${CMAKE_CURRENT_SOURCE_DIR}/libs/libarchive/linux/libarchive.so")
+    option(USE_SYSTEM_LIBARCHIVE "Use system libarchive instead of bundled" OFF)
 
-    add_library(LibArchive::LibArchive SHARED IMPORTED)
-    set_target_properties(LibArchive::LibArchive PROPERTIES
-        IMPORTED_LOCATION "${LIBARCHIVE_SO}"
-        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/libs/libarchive/include"
-    )
+    if(USE_SYSTEM_LIBARCHIVE)
+        if(LibArchive_LIBRARY AND LibArchive_INCLUDE_DIR)
+            # Use explicitly provided paths (e.g. from Flatpak)
+            add_library(LibArchive::LibArchive SHARED IMPORTED)
+            set_target_properties(LibArchive::LibArchive PROPERTIES
+                IMPORTED_LOCATION "${LibArchive_LIBRARY}"
+                INTERFACE_INCLUDE_DIRECTORIES "${LibArchive_INCLUDE_DIR}"
+            )
+        else()
+            # Fall back to find_package for normal system builds
+            find_package(LibArchive REQUIRED)
+        endif()
+    else()
+        set(LIBARCHIVE_SO "${CMAKE_CURRENT_SOURCE_DIR}/libs/libarchive/linux/libarchive.so")
 
-    add_custom_command(TARGET FLEX POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${LIBARCHIVE_SO}" $<TARGET_FILE_DIR:FLEX>
-        COMMENT "Copying libarchive.so to output directory"
-    )
+        add_library(LibArchive::LibArchive SHARED IMPORTED)
+        set_target_properties(LibArchive::LibArchive PROPERTIES
+            IMPORTED_LOCATION "${LIBARCHIVE_SO}"
+            INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/libs/libarchive/include"
+        )
 
-    set_target_properties(FLEX PROPERTIES
-        BUILD_RPATH   "$ORIGIN"
-        INSTALL_RPATH "$ORIGIN"
-    )
+        add_custom_command(TARGET FLEX POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${LIBARCHIVE_SO}" $<TARGET_FILE_DIR:FLEX>
+            COMMENT "Copying libarchive.so to output directory"
+        )
+
+        set_target_properties(FLEX PROPERTIES
+            BUILD_RPATH   "$ORIGIN"
+            INSTALL_RPATH "$ORIGIN"
+        )
+    endif()
 endif()
 
 # ── Tools (ffmpeg, pandoc) ────────────────────────────────────────────────────
